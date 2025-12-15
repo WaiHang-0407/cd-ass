@@ -8,4 +8,12 @@ try {
 } catch (PDOException $e) {
     die("Error: Could not connect to the database. " . $e->getMessage());
 }
+
+// Test if the connection is successful
+if ($_db) {
+    echo "Database connection successful!";
+} else {
+    echo "Database connection failed!";
+}
+
 ?>

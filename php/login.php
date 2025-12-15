@@ -1,5 +1,5 @@
 <?php
-// Include the PDO database connection file
+include('../php/_head.php');
 include('../db.php'); // Ensure the path to db.php is correct
 
 // Start the session
@@ -43,8 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Redirect based on user role
             if ($user['role'] === 'elderly') {
-                // Redirect to elderly_main.php
-                header('Location: elderly_main.php');
+                if (empty($user['profileID'])) {
+                    header('Location: health_profile_setup.php');
+                } else {
+                    header('Location: elderly_main.php');
+                }
             } elseif ($user['role'] === 'caretaker') {
                 // Redirect to caretaker_main.php
                 header('Location: caretaker_main.php');
@@ -70,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,46 +87,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #f3f4f6; /* Soft light background */
             color: #333; /* Dark text for readability */
             margin: 0;
-            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center; /* Center the form vertically */
+            height: 100vh; /* Make sure it takes the full viewport height */
             flex-direction: column;
-        }
-
-        /* Header Styles */
-        header {
-            position: fixed; /* Fix the header at the top */
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #ffffff;
-            color: #2c3e50;
-            padding: 20px 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add shadow */
-            z-index: 1000;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            color: #2980b9; /* Blue color for the header */
-            font-weight: 700;
+            padding-top: 80px;
         }
 
         /* Container Styling */
         .container {
             background-color: #ffffff;
-            padding: 40px;
-            padding-left: 30px;
-            padding-right: 30px; /* Add padding on both sides */
+            padding: 40px 30px;
             border-radius: 12px;
             box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 500px;
             text-align: center;
             box-sizing: border-box;
-            margin-top: 100px; /* Add space between header and form */
+            margin-top: 200px;
         }
 
         h2 {
@@ -248,11 +231,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>Nutrition App</h1>
-    </header>
-
     <div class="container">
         <h2>Welcome Back</h2>
         <p class="subtitle">Please log in to continue</p>
@@ -297,5 +275,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         });
     </script>
 
+    <?php include('_foot.php'); ?>
 </body>
 </html>
