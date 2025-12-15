@@ -1,6 +1,6 @@
 <?php
-// Include the PDO database connection file using a robust path
-require_once __DIR__ . '/../db.php'; // resolves to cd-ass/db.php
+// Include the PDO database connection file
+include('../db.php'); // Ensure the path to db.php is correct
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -89,49 +89,273 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register — FATTY DIET Planner</title>
-    <!-- Use the same site stylesheet so the color theme matches index.php/login.php -->
-    <link rel="stylesheet" href="../css/app.css">
-    <script src="../js/app.js" defer></script>
+    <title>Register</title>
     <style>
-        /* Small page-specific adjustments that layer on top of app.css */
-        .auth-card { background: #fff; padding: 36px; border-radius: 12px; box-shadow: 0 12px 20px rgba(0,0,0,0.06); max-width: 620px; margin: 120px auto 60px; }
-        .hero-sub, .subtitle { color: #7f8c8d; }
-        .auth-card h2 { margin-top: 0; margin-bottom: 12px; }
-        .subtitle { display:block; margin-bottom:18px; }
+        /* Body Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6; /* Soft light background */
+            color: #333; /* Dark text for readability */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content at the top */
+            flex-direction: column;
+            padding-top: 80px; /* Add space for fixed header */
+            overflow-y: auto; /* Enable scrolling when content overflows */
+            min-height: 100%; /* Ensure the body takes the full height and can scroll */
+        }
 
-        /* Keep floating label compatibility with global styles */
-        .input-container { position: relative; margin-bottom: 18px; }
-        .input-container input { width:100%; padding:16px 18px; border-radius:8px; border:1px solid #e6e6e6; }
-        .input-container label { position:absolute; left:14px; top:12px; padding:0 6px; color:var(--muted); transition:all .18s ease; pointer-events:none; }
-        .password-wrapper #togglePassword, .password-wrapper #toggleConfirmPassword { position:absolute; right:12px; top:12px; cursor:pointer; }
+        /* Header Styles - Fixed Navigation */
+        header {
+            position: fixed; /* Fix the header at the top */
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            color: #2c3e50;
+            padding: 20px;
+            z-index: 1000; /* Ensure header stays on top of other content */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add a small shadow for the header */
+        }
 
-        /* Role options layout - simpler and matching theme */
-        .role-container { display:flex; gap:18px; align-items:center; margin-bottom:18px; }
-        .role-label { color:var(--muted); margin-right:8px; }
-        .role-options { display:flex; gap:18px; }
-        .role-options label { display:flex; gap:8px; align-items:center; color:var(--muted); cursor:pointer; }
-        .role-options input { width:16px; height:16px; }
+        h1 {
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+            color: #2980b9; /* Blue color for the header */
+            margin: 0; /* Remove default margin */
+        }
 
-        .register-btn { width:100%; }
+        /* Adjust the space to leave for the header */
+        .form-container {
+            margin-top: 100px; /* This is the space for the fixed header */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Container Styling */
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: #7f8c8d;
+        }
+
+        /* Input Fields with Floating Labels */
+        .input-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .input-container input {
+            width: 100%;
+            padding: 18px 20px;
+            padding-top: 24px; /* Add space for the label */
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1.1rem;
+            outline: none;
+            transition: 0.3s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        .input-container input:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 5px rgba(41, 128, 185, 0.3);
+        }
+
+        /* Label Styling (Floating Box) */
+        .input-container label {
+            position: absolute;
+            top: 20px; /* Position label inside the input initially */
+            left: 20px;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            pointer-events: none;
+            background-color: #ffffff; /* Background color for the floating box */
+            padding: 0 5px; /* Padding to create the box effect */
+            transition: 0.3s ease all; /* Smooth transition */
+            z-index: 1;
+        }
+
+        /* Move label above the input when focused or text is entered */
+        .input-container input:focus + label,
+        .input-container input:not(:placeholder-shown) + label {
+            top: -10px;
+            left: 20px;
+            color: #2980b9;
+            font-size: 1rem;
+        }
+
+        /* Hide the Default Eye Icon */
+        .input-container input::-webkit-outer-spin-button,
+        .input-container input::-webkit-inner-spin-button,
+        .input-container input[type="password"] {
+            appearance: none;
+            -webkit-appearance: none; /* Hide the default eye icon in Webkit browsers (Chrome, Safari) */
+        }
+
+        /* Password Visibility Toggle */
+        .password-wrapper {
+            position: relative;
+        }
+
+        /* Custom Eye Icon for Password */
+        #togglePassword, #toggleConfirmPassword {
+            position: absolute;
+            right: 15px;
+            top: 13px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #2980b9;
+            display: block; /* Always visible */
+        }
+
+        /* General Styles for Radio Button Group */
+        .role-container {
+            position: relative;
+            margin-bottom: 30px;
+            text-align: left;
+            display: flex;
+        }
+
+        .role-label {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin: 0 50px 0 30px;
+            text-align: left;
+        }
+
+        .role-options {
+            display: flex;                  /* Using flexbox to align items horizontally */
+            justify-content: space-between; /* Distribute space between radio buttons */
+            gap: 50px;                      /* Reduce the space between radio buttons */
+            align-items: center;            /* Vertically align the radio buttons */
+        }
+
+        .role-option {
+            display: flex;
+            align-items: center;            /* Align the radio button with the label */
+            gap: 10px;                       /* Space between radio button and label */
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            cursor: pointer;
+        }
+
+        .role-option input {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;             /* Make the radio button round */
+            border: 2px solid #2980b9;     /* Blue border */
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .role-option input:checked {
+            background-color: #2980b9;     /* Blue when checked */
+            border-color: #2980b9;
+        }
+
+        .role-option input:checked + .role-label-text {
+            color: #2980b9;                /* Text color when the radio is checked */
+        }
+
+        .role-option:hover input {
+            background-color: #f0f0f0;     /* Light gray background on hover */
+        }
+
+        .role-label-text {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            transition: color 0.3s ease;
+        }
+
+        .role-option:hover .role-label-text {
+            color: #2980b9;                /* Change text color on hover */
+        }
+
+
+        /* Button Styling */
+        .register-btn {
+            background-color: #2980b9;
+            color: #fff;
+            padding: 16px;
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .register-btn:hover {
+            background-color: #1c5e87;
+        }
+
+        /* Links Styling */
+        a {
+            display: inline-block;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            color: #2980b9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #1c5e87;
+            text-decoration: underline;
+        }
+
+        .forgot {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+
+        .create {
+            font-size: 1.1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
     </style>
 </head>
-<body>
 
-    <!-- Reuse the same site header so theme colors, nav and branding match -->
-    <header class="site-header">
-        <div class="container nav-row">
-            <div class="brand">FATTY DIET Planner</div>
-            <nav class="main-nav">
-                <a href="../index.php">Home</a>
-                <a href="../index.php#about">About Us</a>
-                <a href="login.php">Log In / Register</a>
-            </nav>
-        </div>
+<body>
+    <header>
+        <h1>Nutrition App</h1>
     </header>
 
-    <main>
-        <div class="auth-card" role="main">
+    <div class="form-container">
+        <div class="container">
             <h2>Create an Account</h2>
             <p class="subtitle">Register to get started</p>
 
@@ -151,40 +375,79 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="email">Email</label>
                 </div>
 
+                <!-- Password Input -->
                 <div class="input-container password-wrapper">
                     <input type="password" id="password" name="password" required placeholder=" ">
                     <label for="password">Password</label>
                     <span id="togglePassword" class="toggle">👁</span>
                 </div>
 
+                <!-- Confirm Password Input -->
                 <div class="input-container password-wrapper">
                     <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" ">
                     <label for="confirmPassword">Confirm Password</label>
                     <span id="toggleConfirmPassword" class="toggle">👁</span>
                 </div>
 
+                <!-- Role Selection Radio Buttons -->
                 <div class="role-container">
-                    <div class="role-label">Role:</div>
+                    <label for="role" class="role-label">Role :</label>
                     <div class="role-options">
-                        <label><input type="radio" id="role-elderly" name="role" value="elderly" required> Elderly</label>
-                        <label><input type="radio" id="role-caretaker" name="role" value="caretaker"> Caretaker</label>
+                        <div id="role-option">
+                            <input type="radio" id="role-elderly" name="role" value="elderly" required>
+                            <span class="role-label-text">Elderly</span>
+                        </div>
+
+                        <div id="role-option">
+                            <input type="radio" id="role-caretaker" name="role" value="caretaker" required>
+                            <span class="role-label-text">Caretaker</span>
+                        </div> 
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary register-btn">Register</button>
+                <button type="submit" class="register-btn">Register</button>
 
-                <div style="margin-top:12px; text-align:center;">
-                    <a href="login.php" class="forgot">Already have an account? Log in</a>
-                </div>
+                <a href="login.php" class="forgot">Already have an account? Log in</a>
             </form>
+
         </div>
-    </main>
+    </div>
 
-    <footer class="site-footer">
-        <div class="container">© 2025 FATTY DIET Planner</div>
-    </footer>
+    <script>
+        // Password visibility toggle
+        const togglePassword = document.querySelector("#togglePassword");
+        const passwordField = document.querySelector("#password");
 
-    
+        // Confirm Password visibility toggle
+        const toggleConfirmPassword = document.querySelector("#toggleConfirmPassword");
+        const confirmPasswordField = document.querySelector("#confirmPassword");
+
+        // Toggle password visibility
+        togglePassword.addEventListener("click", function() {
+            const type = passwordField.getAttribute("type") === "password" ? "text" : "password";
+            passwordField.setAttribute("type", type);
+
+            // Toggle the eye icon between open and closed
+            if (type === "password") {
+                this.textContent = "👁"; // Eye icon for password hidden
+            } else {
+                this.textContent = "❌"; // Crossed eye icon for password visible
+            }
+        });
+
+        // Toggle confirm password visibility
+        toggleConfirmPassword.addEventListener("click", function() {
+            const type = confirmPasswordField.getAttribute("type") === "password" ? "text" : "password";
+            confirmPasswordField.setAttribute("type", type);
+
+            // Toggle the eye icon between open and closed
+            if (type === "password") {
+                this.textContent = "👁"; // Eye icon for password hidden
+            } else {
+                this.textContent = "❌"; // Crossed eye icon for password visible
+            }
+        });
+    </script>
 
 </body>
 </html>
