@@ -1,21 +1,17 @@
 <?php
-// Include the PDO database connection file
-include('../db.php'); // Ensure the path to db.php is correct
+include('../php/_head.php');
+include('../db.php');
+session_start();
 
-// Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
     $username = $_POST['username'];
     $phone = $_POST['phone'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
-    $role = $_POST['role']; // Get the role from the form
+    $role = strtolower($_POST['role']);
 
-    // Convert the role to lowercase to ensure consistency
-    $role = strtolower($role);
-
-    // Validate the input fields
+    // Validate input fields
     if (empty($username) || empty($phone) || empty($email) || empty($password) || empty($confirmPassword) || empty($role)) {
         echo "All fields are required!";
         exit();
@@ -26,11 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
-    // Hash the password for security
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Check if the username or email already exists
     try {
+        // Start transaction
+        $_db->beginTransaction();
+
+        // Check if username or email already exists
         $sql = "SELECT * FROM users WHERE username = :username OR email = :email";
         $stmt = $_db->prepare($sql);
         $stmt->bindValue(':username', $username, PDO::PARAM_STR);
@@ -38,51 +36,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            echo "Email already exists.";
+            echo "Email or username already exists.";
             exit();
         }
 
-        // Insert the new user into the database (without the userID)
-        $sql = "INSERT INTO users (username, phoneNo, email, password, role) VALUES (:username, :phone, :email, :password, :role)";
+        // Insert new user (without userID first)
+        $sql = "INSERT INTO users (username, phoneNo, email, password, role) 
+                VALUES (:username, :phone, :email, :password, :role)";
         $stmt = $_db->prepare($sql);
         $stmt->bindValue(':username', $username, PDO::PARAM_STR);
         $stmt->bindValue(':phone', $phone, PDO::PARAM_STR);
         $stmt->bindValue(':email', $email, PDO::PARAM_STR);
         $stmt->bindValue(':password', $hashedPassword, PDO::PARAM_STR);
         $stmt->bindValue(':role', $role, PDO::PARAM_STR);
+        $stmt->execute();
 
-        // Execute the query
-        if ($stmt->execute()) {
-            // Get the last inserted id (auto-increment value)
-            $userID = $_db->lastInsertId();
+        // Get the auto-increment ID
+        $autoIncrementID = $_db->lastInsertId();
 
-            // Format the userID to match the "U00001", "U00002", format
-            $formattedUserID = "U" . str_pad($userID, 5, '0', STR_PAD_LEFT);
+        // Format the userID
+        $formattedUserID = "U" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
 
-            // Update the userID field in the users table with the formatted userID
-            $updateSql = "UPDATE users SET userID = :formattedUserID WHERE userID = :userID";
-            $updateStmt = $_db->prepare($updateSql);
-            $updateStmt->bindValue(':formattedUserID', $formattedUserID, PDO::PARAM_STR);
-            $updateStmt->bindValue(':userID', $userID, PDO::PARAM_INT);
+        // Update the userID field with formatted value
+        $updateSql = "UPDATE users SET userID = :formattedUserID WHERE id = :autoIncrementID";
+        $updateStmt = $_db->prepare($updateSql);
+        $updateStmt->bindValue(':formattedUserID', $formattedUserID, PDO::PARAM_STR);
+        $updateStmt->bindValue(':autoIncrementID', $autoIncrementID, PDO::PARAM_INT);
+        $updateStmt->execute();
 
-            // Execute the update query (only once)
-            if ($updateStmt->execute()) {
-                // Redirect to the login page after successful registration
-                header('Location: login.php');
-                exit();
-            } else {
-                echo "Error: Could not update the userID.";
+        // Insert into role-specific tables
+        if ($role == 'elderly') {
+            $elderlyID = "E" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
+            
+            // CRITICAL: Use formatted userID since userID column is VARCHAR(10)
+            $elderlySQL = "INSERT INTO Elderly (elderlyID, userID, profileID, dietPlanID, caretakerID) 
+                           VALUES (:elderlyID, :userID, NULL, NULL, NULL)";
+            $elderlyStmt = $_db->prepare($elderlySQL);
+            $elderlyStmt->bindValue(':elderlyID', $elderlyID, PDO::PARAM_STR);
+            $elderlyStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR); // Use formatted userID
+            $elderlyStmt->execute();
+            
+            // Verify insertion
+            $verifySQL = "SELECT * FROM Elderly WHERE userID = :userID";
+            $verifyStmt = $_db->prepare($verifySQL);
+            $verifyStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR);
+            $verifyStmt->execute();
+            
+            if ($verifyStmt->rowCount() == 0) {
+                throw new Exception("Failed to insert elderly record for userID: $formattedUserID");
             }
-        } else {
-            echo "Error: Could not register the user.";
+            
+        } elseif ($role == 'caretaker') {
+            $caretakerID = "C" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
+            
+            $caretakerSQL = "INSERT INTO Caretaker (caretakerID, userID) 
+                             VALUES (:caretakerID, :userID)";
+            $caretakerStmt = $_db->prepare($caretakerSQL);
+            $caretakerStmt->bindValue(':caretakerID', $caretakerID, PDO::PARAM_STR);
+            $caretakerStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR); // Use formatted userID
+            $caretakerStmt->execute();
         }
+
+        // Commit transaction
+        $_db->commit();
+
+        // Redirect to login
+        header('Location: login.php');
+        exit();
+
     } catch (PDOException $e) {
+        // Rollback on error
+        $_db->rollBack();
+        echo "Database Error: " . $e->getMessage();
+        error_log("Registration error: " . $e->getMessage());
+        exit();
+    } catch (Exception $e) {
+        $_db->rollBack();
         echo "Error: " . $e->getMessage();
+        error_log("Registration error: " . $e->getMessage());
         exit();
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -91,51 +126,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <style>
-        /* Body Styles */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f3f4f6; /* Soft light background */
-            color: #333; /* Dark text for readability */
-            margin: 0;
+            background-color: #f3f4f6;
+            color: #333;
+            margin-bottom: 30px;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align content at the top */
+            align-items: flex-start;
             flex-direction: column;
-            padding-top: 80px; /* Add space for fixed header */
-            overflow-y: auto; /* Enable scrolling when content overflows */
-            min-height: 100%; /* Ensure the body takes the full height and can scroll */
+            padding-top: 80px;
+            overflow-y: auto;
+            min-height: 100%;
         }
 
-        /* Header Styles - Fixed Navigation */
-        header {
-            position: fixed; /* Fix the header at the top */
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #ffffff;
-            color: #2c3e50;
-            padding: 20px;
-            z-index: 1000; /* Ensure header stays on top of other content */
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add a small shadow for the header */
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            letter-spacing: 1px;
-            color: #2980b9; /* Blue color for the header */
-            margin: 0; /* Remove default margin */
-        }
-
-        /* Adjust the space to leave for the header */
         .form-container {
-            margin-top: 100px; /* This is the space for the fixed header */
+            margin-top: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
         }
 
-        /* Container Styling */
         .container {
             background-color: #ffffff;
             padding: 40px;
@@ -159,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #7f8c8d;
         }
 
-        /* Input Fields with Floating Labels */
         .input-container {
             position: relative;
             margin-bottom: 30px;
@@ -168,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .input-container input {
             width: 100%;
             padding: 18px 20px;
-            padding-top: 24px; /* Add space for the label */
+            padding-top: 24px;
             border-radius: 8px;
             border: 1px solid #ddd;
             font-size: 1.1rem;
@@ -182,21 +193,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 0 5px rgba(41, 128, 185, 0.3);
         }
 
-        /* Label Styling (Floating Box) */
         .input-container label {
             position: absolute;
-            top: 20px; /* Position label inside the input initially */
+            top: 20px;
             left: 20px;
             color: #7f8c8d;
             font-size: 1.1rem;
             pointer-events: none;
-            background-color: #ffffff; /* Background color for the floating box */
-            padding: 0 5px; /* Padding to create the box effect */
-            transition: 0.3s ease all; /* Smooth transition */
+            background-color: #ffffff;
+            padding: 0 5px;
+            transition: 0.3s ease all;
             z-index: 1;
         }
 
-        /* Move label above the input when focused or text is entered */
         .input-container input:focus + label,
         .input-container input:not(:placeholder-shown) + label {
             top: -10px;
@@ -205,20 +214,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 1rem;
         }
 
-        /* Hide the Default Eye Icon */
         .input-container input::-webkit-outer-spin-button,
         .input-container input::-webkit-inner-spin-button,
         .input-container input[type="password"] {
             appearance: none;
-            -webkit-appearance: none; /* Hide the default eye icon in Webkit browsers (Chrome, Safari) */
+            -webkit-appearance: none;
         }
 
-        /* Password Visibility Toggle */
         .password-wrapper {
             position: relative;
         }
 
-        /* Custom Eye Icon for Password */
         #togglePassword, #toggleConfirmPassword {
             position: absolute;
             right: 15px;
@@ -226,10 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             cursor: pointer;
             font-size: 1.5rem;
             color: #2980b9;
-            display: block; /* Always visible */
+            display: block;
         }
 
-        /* General Styles for Radio Button Group */
         .role-container {
             position: relative;
             margin-bottom: 30px;
@@ -245,16 +250,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .role-options {
-            display: flex;                  /* Using flexbox to align items horizontally */
-            justify-content: space-between; /* Distribute space between radio buttons */
-            gap: 50px;                      /* Reduce the space between radio buttons */
-            align-items: center;            /* Vertically align the radio buttons */
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            align-items: center;
         }
 
         .role-option {
             display: flex;
-            align-items: center;            /* Align the radio button with the label */
-            gap: 10px;                       /* Space between radio button and label */
+            align-items: center;
+            gap: 10px;
             font-size: 1.1rem;
             color: #7f8c8d;
             cursor: pointer;
@@ -263,23 +268,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .role-option input {
             width: 20px;
             height: 20px;
-            border-radius: 50%;             /* Make the radio button round */
-            border: 2px solid #2980b9;     /* Blue border */
+            border-radius: 50%;
+            border: 2px solid #2980b9;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
         .role-option input:checked {
-            background-color: #2980b9;     /* Blue when checked */
+            background-color: #2980b9;
             border-color: #2980b9;
         }
 
         .role-option input:checked + .role-label-text {
-            color: #2980b9;                /* Text color when the radio is checked */
+            color: #2980b9;
         }
 
         .role-option:hover input {
-            background-color: #f0f0f0;     /* Light gray background on hover */
+            background-color: #f0f0f0;
         }
 
         .role-label-text {
@@ -289,11 +294,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .role-option:hover .role-label-text {
-            color: #2980b9;                /* Change text color on hover */
+            color: #2980b9;
         }
 
-
-        /* Button Styling */
         .register-btn {
             background-color: #2980b9;
             color: #fff;
@@ -311,7 +314,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #1c5e87;
         }
 
-        /* Links Styling */
         a {
             display: inline-block;
             font-size: 1.1rem;
@@ -332,28 +334,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #7f8c8d;
         }
 
-        .create {
-            font-size: 1.1rem;
-        }
-
-        /* Responsive Design */
         @media (max-width: 600px) {
             .container {
                 padding: 30px 20px;
             }
 
-            h1 {
-                font-size: 2.5rem;
+            h2 {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <h1>Nutrition App</h1>
-    </header>
-
     <div class="form-container">
         <div class="container">
             <h2>Create an Account</h2>
@@ -375,30 +368,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="email">Email</label>
                 </div>
 
-                <!-- Password Input -->
                 <div class="input-container password-wrapper">
                     <input type="password" id="password" name="password" required placeholder=" ">
                     <label for="password">Password</label>
                     <span id="togglePassword" class="toggle">👁</span>
                 </div>
 
-                <!-- Confirm Password Input -->
                 <div class="input-container password-wrapper">
                     <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" ">
                     <label for="confirmPassword">Confirm Password</label>
                     <span id="toggleConfirmPassword" class="toggle">👁</span>
                 </div>
 
-                <!-- Role Selection Radio Buttons -->
                 <div class="role-container">
                     <label for="role" class="role-label">Role :</label>
                     <div class="role-options">
-                        <div id="role-option">
+                        <div class="role-option">
                             <input type="radio" id="role-elderly" name="role" value="elderly" required>
                             <span class="role-label-text">Elderly</span>
                         </div>
 
-                        <div id="role-option">
+                        <div class="role-option">
                             <input type="radio" id="role-caretaker" name="role" value="caretaker" required>
                             <span class="role-label-text">Caretaker</span>
                         </div> 
@@ -409,45 +399,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <a href="login.php" class="forgot">Already have an account? Log in</a>
             </form>
-
         </div>
     </div>
 
     <script>
-        // Password visibility toggle
         const togglePassword = document.querySelector("#togglePassword");
         const passwordField = document.querySelector("#password");
-
-        // Confirm Password visibility toggle
         const toggleConfirmPassword = document.querySelector("#toggleConfirmPassword");
         const confirmPasswordField = document.querySelector("#confirmPassword");
 
-        // Toggle password visibility
         togglePassword.addEventListener("click", function() {
             const type = passwordField.getAttribute("type") === "password" ? "text" : "password";
             passwordField.setAttribute("type", type);
-
-            // Toggle the eye icon between open and closed
-            if (type === "password") {
-                this.textContent = "👁"; // Eye icon for password hidden
-            } else {
-                this.textContent = "❌"; // Crossed eye icon for password visible
-            }
+            this.textContent = type === "password" ? "👁" : "❌";
         });
 
-        // Toggle confirm password visibility
         toggleConfirmPassword.addEventListener("click", function() {
             const type = confirmPasswordField.getAttribute("type") === "password" ? "text" : "password";
             confirmPasswordField.setAttribute("type", type);
-
-            // Toggle the eye icon between open and closed
-            if (type === "password") {
-                this.textContent = "👁"; // Eye icon for password hidden
-            } else {
-                this.textContent = "❌"; // Crossed eye icon for password visible
-            }
+            this.textContent = type === "password" ? "👁" : "❌";
         });
     </script>
 
+    <?php include('_foot.php'); ?>
 </body>
 </html>

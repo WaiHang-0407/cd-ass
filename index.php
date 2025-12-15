@@ -1,3 +1,7 @@
+<?php
+    include('php/login.php');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,12 +12,4 @@
     <script src="js/app.js"></script>
 </head>
 
-<?php
-    include('php/login.php');
-?>
-
-<body>
-    
-    
-</body>
 </html>
