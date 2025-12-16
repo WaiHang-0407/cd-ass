@@ -1,6 +1,7 @@
 <?php
-include('../php/_head.php');
-include('../db.php');
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/_head.php'; // Start the session
+
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
-        // Insert new user (without userID first)
+        // Insert new user (userID will be auto-incremented)
         $sql = "INSERT INTO users (username, phoneNo, email, password, role) 
                 VALUES (:username, :phone, :email, :password, :role)";
         $stmt = $_db->prepare($sql);
@@ -51,41 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bindValue(':role', $role, PDO::PARAM_STR);
         $stmt->execute();
 
-        // Get the auto-increment ID
+        // Get the auto-increment ID of the newly inserted user
         $autoIncrementID = $_db->lastInsertId();
 
-        // Format the userID
-        $formattedUserID = "U" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
-
-        // Update the userID field with formatted value
-        $updateSql = "UPDATE users SET userID = :formattedUserID WHERE id = :autoIncrementID";
-        $updateStmt = $_db->prepare($updateSql);
-        $updateStmt->bindValue(':formattedUserID', $formattedUserID, PDO::PARAM_STR);
-        $updateStmt->bindValue(':autoIncrementID', $autoIncrementID, PDO::PARAM_INT);
-        $updateStmt->execute();
-
-        // Insert into role-specific tables
+        // Insert into role-specific tables based on the user's role
         if ($role == 'elderly') {
             $elderlyID = "E" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
             
-            // CRITICAL: Use formatted userID since userID column is VARCHAR(10)
+            // Use the auto-incremented userID directly
             $elderlySQL = "INSERT INTO Elderly (elderlyID, userID, profileID, dietPlanID, caretakerID) 
                            VALUES (:elderlyID, :userID, NULL, NULL, NULL)";
             $elderlyStmt = $_db->prepare($elderlySQL);
             $elderlyStmt->bindValue(':elderlyID', $elderlyID, PDO::PARAM_STR);
-            $elderlyStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR); // Use formatted userID
+            $elderlyStmt->bindValue(':userID', $autoIncrementID, PDO::PARAM_INT); // Use auto-incremented userID
             $elderlyStmt->execute();
-            
-            // Verify insertion
-            $verifySQL = "SELECT * FROM Elderly WHERE userID = :userID";
-            $verifyStmt = $_db->prepare($verifySQL);
-            $verifyStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR);
-            $verifyStmt->execute();
-            
-            if ($verifyStmt->rowCount() == 0) {
-                throw new Exception("Failed to insert elderly record for userID: $formattedUserID");
-            }
-            
         } elseif ($role == 'caretaker') {
             $caretakerID = "C" . str_pad($autoIncrementID, 5, '0', STR_PAD_LEFT);
             
@@ -93,14 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                              VALUES (:caretakerID, :userID)";
             $caretakerStmt = $_db->prepare($caretakerSQL);
             $caretakerStmt->bindValue(':caretakerID', $caretakerID, PDO::PARAM_STR);
-            $caretakerStmt->bindValue(':userID', $formattedUserID, PDO::PARAM_STR); // Use formatted userID
+            $caretakerStmt->bindValue(':userID', $autoIncrementID, PDO::PARAM_INT); // Use auto-incremented userID
             $caretakerStmt->execute();
         }
 
         // Commit transaction
         $_db->commit();
 
-        // Redirect to login
+        // Redirect to login page
         header('Location: login.php');
         exit();
 
@@ -118,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

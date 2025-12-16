@@ -1,8 +1,6 @@
 <?php
-include('../php/_head.php');
-include('../db.php'); // Ensure the path to db.php is correct
-
-// Start the session
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/_head.php';// Start the session
 session_start();
 
 // Check if the form is submitted
