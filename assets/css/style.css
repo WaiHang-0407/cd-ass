@@ -1,0 +1,66 @@
+/* assets/css/style.css */
+
+:root {
+    --font-size-base: 18px;
+    --font-size-lg: 22px;
+    --font-size-sm: 16px;
+    --color-primary: #0d6efd;
+    --color-contrast-text: #000000;
+}
+
+body {
+    font-size: var(--font-size-base);
+    color: #333;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--color-contrast-text);
+    font-weight: 700;
+}
+
+.btn-lg {
+    font-size: var(--font-size-lg);
+    padding: 15px 30px;
+}
+
+.card-title {
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+}
+
+.form-control, .form-select {
+    font-size: var(--font-size-base);
+    padding: 10px;
+}
+
+/* Accessibility Utilities */
+.text-large {
+    font-size: 1.25rem;
+}
+
+.high-contrast {
+    background-color: #fff;
+    color: #000;
+    border: 2px solid #000;
+}
+
+/* Status Colors for nutrient warnings */
+.nutrient-warning-high {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.nutrient-warning-moderate {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.nutrient-safe {
+    color: #198754;
+}
