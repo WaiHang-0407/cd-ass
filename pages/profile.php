@@ -28,9 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profile->setFibreRequirement((float) ($_POST['fibreRequirement'] ?? 0));
     $profile->setSoftFoodRequirement(isset($_POST['softFoodRequirement']));
 
-    // Arrays (Simple text area parsing for prototype)
-    $profile->allergies = array_map('trim', explode(',', $_POST['allergies'] ?? ''));
-    $profile->healthCondition = array_map('trim', explode(',', $_POST['healthCondition'] ?? ''));
+    // Arrays
+    $profile->allergies = $_POST['allergies'] ?? [];
+    $profile->healthCondition = $_POST['healthCondition'] ?? [];
     $profile->medicationList = array_map('trim', explode(',', $_POST['medicationList'] ?? ''));
 
     // AUTO-CALCULATION LOGIC
@@ -57,6 +57,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// DEFINED LISTS
+$availableAllergies = [
+    'Peanuts',
+    'Tree Nuts',
+    'Milk (Lactose Intolerance)',
+    'Eggs',
+    'Fish',
+    'Shellfish',
+    'Soy',
+    'Wheat (Gluten)'
+];
+
+$availableConditions = [
+    'Diabetes',
+    'Hypertension (High Blood Pressure)',
+    'High Cholesterol',
+    'Heart Disease',
+    'Kidney Disease'
+];
+
 include '../includes/header.php';
 ?>
 <script>
@@ -67,7 +87,10 @@ include '../includes/header.php';
     function calculateLimits() {
         const height = parseFloat(document.querySelector('input[name="height"]').value) || 0;
         const weight = parseFloat(document.querySelector('input[name="weight"]').value) || 0;
-        const conditions = document.querySelector('textarea[name="healthCondition"]').value.toLowerCase();
+
+        // Get selected conditions
+        const conditionCheckboxes = document.querySelectorAll('input[name="healthCondition[]"]:checked');
+        const conditions = Array.from(conditionCheckboxes).map(cb => cb.value.toLowerCase());
 
         if (height > 0 && weight > 0) {
             // BMI
@@ -88,15 +111,33 @@ include '../includes/header.php';
             let fibre = 25;
 
             // Adjustments
-            if (conditions.includes('diabetes')) {
+            const hasDiabetes = conditions.includes('diabetes');
+            const hasHypertension = conditions.some(c => c.includes('hypertension') || c.includes('high blood pressure'));
+            const hasHeartDisease = conditions.includes('heart disease');
+            const hasKidneyDisease = conditions.includes('kidney disease');
+            const hasHighCholesterol = conditions.includes('high cholesterol');
+
+            // -- Diabetes --
+            if (hasDiabetes) {
                 sugar = 20;
                 carbs = Math.round((tdee * 0.45) / 4);
+                fibre = 30;
             }
-            if (conditions.includes('hypertension') || conditions.includes('high blood pressure')) {
+
+            // -- Hypertension / Heart Disease / Kidney Disease --
+            if (hasHypertension || hasHeartDisease || hasKidneyDisease) {
                 sodium = 1500;
             }
-            if (conditions.includes('high cholesterol')) {
+
+            // -- High Cholesterol --
+            if (hasHighCholesterol) {
+                fibre = 30; // High fibre matches diabetes reco too
                 calories = Math.round(tdee * 0.95);
+            }
+
+            // -- Combined: Diabetes AND High Cholesterol --
+            if (hasDiabetes && hasHighCholesterol) {
+                fibre = 35;
             }
 
             // Set Values
@@ -109,8 +150,12 @@ include '../includes/header.php';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const inputs = document.querySelectorAll('input[name="height"], input[name="weight"], textarea[name="healthCondition"]');
+        const inputs = document.querySelectorAll('input[name="height"], input[name="weight"]');
+        const checkboxes = document.querySelectorAll('input[name="healthCondition[]"]');
+
         inputs.forEach(input => input.addEventListener('input', calculateLimits));
+        checkboxes.forEach(cb => cb.addEventListener('change', calculateLimits));
+
         // Also run on load to populate if values are already present
         calculateLimits();
     });
@@ -156,14 +201,38 @@ include '../includes/header.php';
                 <div class="card-header bg-warning text-dark">Medical Details</div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label>Allergies (comma separated)</label>
-                        <textarea name="allergies"
-                            class="form-control"><?= implode(', ', $profile->allergies) ?></textarea>
+                        <label class="form-label">Allergies</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php foreach ($availableAllergies as $allergy): ?>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="allergies[]"
+                                        value="<?= htmlspecialchars($allergy) ?>" id="allergy_<?= md5($allergy) ?>"
+                                        <?= in_array($allergy, $profile->allergies) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="allergy_<?= md5($allergy) ?>">
+                                        <?= htmlspecialchars($allergy) ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <!-- Other Option -->
+                        <!-- <div class="mt-2">
+                            <input type="text" name="allergies_other" class="form-control form-control-sm" placeholder="Other allergies...">
+                         </div> -->
                     </div>
                     <div class="mb-3">
-                        <label>Health Conditions (comma separated)</label>
-                        <textarea name="healthCondition"
-                            class="form-control"><?= implode(', ', $profile->healthCondition) ?></textarea>
+                        <label class="form-label">Health Conditions</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php foreach ($availableConditions as $cond): ?>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="healthCondition[]"
+                                        value="<?= htmlspecialchars($cond) ?>" id="cond_<?= md5($cond) ?>"
+                                        <?= in_array($cond, $profile->healthCondition) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="cond_<?= md5($cond) ?>">
+                                        <?= htmlspecialchars($cond) ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label>Medications (comma separated)</label>

@@ -5,15 +5,232 @@ require_once '../includes/db.php'; // Fix Undefined Variable $pdo
 requireLogin();
 include '../includes/header.php';
 
-$user = getCurrentUser();
+$loggedInUser = getCurrentUser();
+$viewingUserID = $loggedInUser->userID;
+
+// Caretaker / Linked Account Logic
+$linkedPatients = [];
+if ($loggedInUser->role == 'Caretaker' || $loggedInUser->role == 'User') { // Basic Users might also link
+    // We need to use the Caretaker class to fetch links regardless of current role string if we want "User" to act as one
+    // But safely we can just check database or assume Role class matches
+    require_once '../classes/SubUsers.php';
+    $caretakerObj = new Caretaker($pdo, (array) $loggedInUser);
+    $linkedPatients = $caretakerObj->getLinkedPatients();
+
+    // Handle Switch
+    if (isset($_GET['view_user'])) {
+        $requestedID = $_GET['view_user'];
+        // Validate ownership
+        $isValid = false;
+        if ($requestedID == $loggedInUser->userID)
+            $isValid = true;
+        foreach ($linkedPatients as $lp) {
+            if ($lp->userID == $requestedID)
+                $isValid = true;
+        }
+
+        if ($isValid) {
+            $viewingUserID = $requestedID;
+        }
+    }
+}
+
+// Fetch the Viewing User Data
+if ($viewingUserID != $loggedInUser->userID) {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE userID = ?");
+    $stmt->execute([$viewingUserID]);
+    $viewingUserData = $stmt->fetch();
+    $user = (object) $viewingUserData; // Cast to object to match getCurrentUser structure
+    // Role fix for display
+    $user->role = $viewingUserData['role'];
+} else {
+    $user = $loggedInUser;
+}
 ?>
 
 <div class="row">
-    <div class="col-12">
-        <h2 class="mb-4">Welcome, <?= htmlspecialchars($user->name) ?>! <span
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, <?= htmlspecialchars($user->name) ?>! <span
                 class="badge bg-secondary fs-6"><?= $user->role ?></span></h2>
+
+        <div class="d-flex align-items-center gap-2">
+            <?php if (!empty($linkedPatients)): ?>
+                <form method="get" class="d-flex">
+                    <select name="view_user" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="<?= $loggedInUser->userID ?>" <?= $viewingUserID == $loggedInUser->userID ? 'selected' : '' ?>>
+                            My Profile
+                        </option>
+                        <optgroup label="Linked Accounts">
+                            <?php foreach ($linkedPatients as $lp): ?>
+                                <option value="<?= $lp->userID ?>" <?= $viewingUserID == $lp->userID ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($lp->name) ?> (<?= $lp->role ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    </select>
+                </form>
+            <?php endif; ?>
+
+            <?php if ($loggedInUser->role == 'Caretaker' || $loggedInUser->role == 'User'): ?>
+                <a href="link-account.php" class="btn btn-sm btn-outline-primary">+ Link Account</a>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
+
+<?php
+// Handle Sending Reminder
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
+    $reminderMsg = $_POST['reminder_message'] ?? '';
+    // $viewingUserID is the ID of the person we are viewing (The Patient)
+    // $loggedInUser->userID is Me (The Caretaker)
+
+    if (!empty($reminderMsg) && $viewingUserID != $loggedInUser->userID) {
+        $stmt = $pdo->prepare("INSERT INTO reminders (senderID, receiverID, message) VALUES (?, ?, ?)");
+        $stmt->execute([$loggedInUser->userID, $viewingUserID, $reminderMsg]);
+        echo "<div class='alert alert-success'>Reminder sent to " . htmlspecialchars($user->name) . "!</div>";
+    }
+}
+?>
+
+<!-- Caretaker Actions Bar -->
+<?php if ($loggedInUser->role == 'Caretaker' && $viewingUserID != $loggedInUser->userID): ?>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-primary">
+                <div class="card-body d-flex justify-content-between align-items-center py-2">
+                    <span class="fw-bold text-primary">Caretaker Controls for <?= htmlspecialchars($user->name) ?></span>
+                    <div class="d-flex gap-2">
+                        <!-- Message Dietitian -->
+                        <a href="messages.php?patient_id=<?= $viewingUserID ?>" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-chat-dots"></i> Message Dietitian
+                        </a>
+
+                        <!-- Send Reminder Modal Trigger -->
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#reminderModal">
+                            <i class="bi bi-bell"></i> Send Reminder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div class="modal fade" id="reminderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Reminder to <?= htmlspecialchars($user->name) ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Message</label>
+                            <input type="text" name="reminder_message" class="form-control"
+                                placeholder="e.g. Don't forget to drink water!" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="send_reminder" class="btn btn-primary">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<!-- Check for Reminders if I am the User/Elderly -->
+<?php if ($loggedInUser->userID == $viewingUserID): ?>
+    <?php
+    // Basic Check if table exists to avoid crash during dev if needed, or assume migration run
+    try {
+        $rStmt = $pdo->prepare("SELECT r.*, u.name as senderName FROM reminders r JOIN users u ON r.senderID = u.userID WHERE r.receiverID = ? AND r.isRead = 0 ORDER BY r.createdAt DESC");
+        $rStmt->execute([$loggedInUser->userID]);
+        $myReminders = $rStmt->fetchAll();
+    } catch (Exception $e) {
+        $myReminders = [];
+    }
+    ?>
+    <?php if (!empty($myReminders)): ?>
+        <div class="row mb-3">
+            <div class="col-12">
+                <?php foreach ($myReminders as $rem): ?>
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+                        <strong><i class="bi bi-bell-fill"></i> Reminder from <?= htmlspecialchars($rem['senderName']) ?>:</strong>
+                        <?= htmlspecialchars($rem['message']) ?>
+                        <a href="?mark_read=<?= $rem['reminderID'] ?>" class="btn-close" aria-label="Close"></a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php
+    // Handle Mark Read
+    if (isset($_GET['mark_read'])) {
+        $upd = $pdo->prepare("UPDATE reminders SET isRead = 1 WHERE reminderID = ? AND receiverID = ?");
+        $upd->execute([$_GET['mark_read'], $loggedInUser->userID]);
+        // Refresh to hide (using JS to avoid header issues if output started)
+        echo "<script>window.location.href='dashboard.php';</script>";
+    }
+?>
+<?php endif; ?>
+
+<?php
+// Fetch Pending Requests
+$pendingOut = [];
+$pendingIn = [];
+
+try {
+    // Outgoing (I sent, waiting for them)
+    $stmtOut = $pdo->prepare("SELECT u.name, u.email FROM link_requests lr JOIN users u ON lr.targetID = u.userID WHERE lr.initiatorID = ?");
+    $stmtOut->execute([$loggedInUser->userID]);
+    $pendingOut = $stmtOut->fetchAll();
+
+    // Incoming (They sent, waiting for me)
+    $stmtIn = $pdo->prepare("SELECT u.name, u.email FROM link_requests lr JOIN users u ON lr.initiatorID = u.userID WHERE lr.targetID = ?");
+    $stmtIn->execute([$loggedInUser->userID]);
+    $pendingIn = $stmtIn->fetchAll();
+} catch (Exception $e) { /* Ignore if table missing during migration gap */
+}
+?>
+
+<!-- Pending Requests Notifications -->
+<?php if (!empty($pendingOut)): ?>
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center">
+                <i class="bi bi-hourglass-split me-2"></i>
+                <div>
+                    <strong>Pending Links:</strong> You have sent link requests to:
+                    <?php foreach ($pendingOut as $po)
+                        echo htmlspecialchars($po['name']) . " (" . htmlspecialchars($po['email']) . "), "; ?>
+                    <br><small>Ask them to go to "Link Account" and enter your email
+                        (<?= htmlspecialchars($loggedInUser->email) ?>) to confirm.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($pendingIn)): ?>
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="alert alert-warning d-flex align-items-center">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <div>
+                    <strong>Action Required:</strong> The following users want to link with you:
+                    <?php foreach ($pendingIn as $pi)
+                        echo htmlspecialchars($pi['name']) . " (" . htmlspecialchars($pi['email']) . "), "; ?>
+                    <br><a href="link-account.php" class="btn btn-sm btn-dark mt-1">Go to Link Account</a> to confirm.
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="row">
     <?php if ($user->role == 'User' || $user->role == 'Elderly'): ?>
@@ -226,31 +443,63 @@ $user = getCurrentUser();
                         Streak</span>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center mb-3">
-                            <h6 class="text-muted">Calories</h6>
-                            <h3 class="fw-bold"><?= $progress->caloriesTaken ?> <span class="fs-6 text-muted">/
-                                    <?= $calLimit ?></span></h3>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: <?= $calPerc ?>%">
+                    <div class="row row-cols-2 row-cols-md-4 g-3 mb-3">
+                        <?php
+                        $metrics = [
+                            ['label' => 'Calories', 'val' => $progress->caloriesTaken, 'limit' => ($profile->caloriesLimit ?: 2000), 'unit' => '', 'type' => 'range'],
+                            ['label' => 'Protein', 'val' => $progress->proteinTaken, 'limit' => 60, 'unit' => 'g', 'type' => 'min'],
+                            ['label' => 'Carbs', 'val' => $progress->carbohydrateTaken, 'limit' => ($profile->carbsLimit ?: 275), 'unit' => 'g', 'type' => 'max'],
+                            ['label' => 'Sodium', 'val' => $progress->sodiumTaken, 'limit' => ($profile->sodiumLimit ?: 2300), 'unit' => 'mg', 'type' => 'max'],
+                            ['label' => 'Sugar', 'val' => $progress->sugarTaken, 'limit' => ($profile->sugarLimit ?: 50), 'unit' => 'g', 'type' => 'max'],
+                            ['label' => 'Fiber', 'val' => $progress->fiberTaken, 'limit' => 30, 'unit' => 'g', 'type' => 'min'],
+                            ['label' => 'Water', 'val' => $progress->waterIntake, 'limit' => 2.0, 'unit' => 'L', 'type' => 'min'],
+                        ];
+
+                        foreach ($metrics as $m):
+                            $val = $m['val'];
+                            $limit = $m['limit'];
+                            $type = $m['type'];
+                            $ratio = ($limit > 0) ? ($val / $limit) : 0;
+                            $perc = min(100, $ratio * 100);
+
+                            // Determine Color
+                            $col = 'success'; // Default Good
+                    
+                            if ($type == 'max') {
+                                if ($ratio > 1.25)
+                                    $col = 'danger';
+                                elseif ($ratio > 1.0)
+                                    $col = 'warning';
+                                else
+                                    $col = 'success';
+                            } elseif ($type == 'min') {
+                                if ($ratio < 0.5)
+                                    $col = 'danger';
+                                elseif ($ratio < 0.8)
+                                    $col = 'warning';
+                                else
+                                    $col = 'info';
+                            } elseif ($type == 'range') { // Calories
+                                if ($ratio > 1.25)
+                                    $col = 'danger';
+                                elseif ($ratio > 1.1)
+                                    $col = 'warning';
+                                elseif ($ratio < 0.5)
+                                    $col = 'warning';
+                                else
+                                    $col = 'success';
+                            }
+                            ?>
+                            <div class="col text-center">
+                                <h6 class="text-muted small mb-1"><?= $m['label'] ?></h6>
+                                <h4 class="fw-bold mb-1"><?= $val ?><small
+                                        class="fs-6 fw-normal text-muted"><?= $m['unit'] ?></small></h4>
+                                <div class="progress bg-light" style="height: 6px;">
+                                    <div class="progress-bar bg-<?= $col ?>" style="width: <?= $perc ?>%"></div>
                                 </div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Target: <?= $limit . $m['unit'] ?></div>
                             </div>
-                        </div>
-                        <div class="col-md-4 text-center mb-3">
-                            <h6 class="text-muted">Protein</h6>
-                            <h3 class="fw-bold"><?= $progress->proteinTaken ?>g</h3>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-info" role="progressbar" style="width: <?= $protPerc ?>%"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <h6 class="text-muted">Water</h6>
-                            <h3 class="fw-bold"><?= $progress->waterIntake ?>L</h3>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $waterPerc ?>%">
-                                </div>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                     <div class="text-end mt-2">
                         <a href="food-log.php" class="btn btn-sm btn-outline-success">Log Intake</a>
@@ -295,21 +544,24 @@ $user = getCurrentUser();
         </div>
 
         <!-- Quick Links -->
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light"> Quick Actions </div>
-                <div class="card-body d-grid gap-2">
-                    <a href="messages.php" class="btn btn-outline-primary text-start"><i class="bi bi-chat-dots me-2"></i>
-                        Message Dietitian</a>
-                    <a href="diet-plan.php" class="btn btn-outline-primary text-start"><i class="bi bi-file-text me-2"></i>
-                        View Full Plan</a>
-                    <a href="food-log.php" class="btn btn-outline-success text-start"><i class="bi bi-plus-circle me-2"></i>
-                        Log Food / View History</a>
-                    <a href="profile.php" class="btn btn-outline-info text-start"><i class="bi bi-person-gear me-2"></i>
-                        Update Profile</a>
+        <!-- Quick Links -->
+        <?php if (($user->role == 'User' || $user->role == 'Elderly') && $loggedInUser->role != 'Caretaker'): ?>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light"> Quick Actions </div>
+                    <div class="card-body d-grid gap-2">
+                        <a href="messages.php" class="btn btn-outline-primary text-start"><i class="bi bi-chat-dots me-2"></i>
+                            Message Dietitian</a>
+                        <a href="diet-plan.php" class="btn btn-outline-primary text-start"><i class="bi bi-file-text me-2"></i>
+                            View Full Plan</a>
+                        <a href="food-log.php" class="btn btn-outline-success text-start"><i class="bi bi-plus-circle me-2"></i>
+                            Log Food / View History</a>
+                        <a href="profile.php" class="btn btn-outline-info text-start"><i class="bi bi-person-gear me-2"></i>
+                            Update Profile</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        <?php endif; ?>
 
         <!-- Shopping List Widget -->
         <div class="col-md-4 mb-4">

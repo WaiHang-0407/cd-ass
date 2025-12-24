@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 20, 2025 at 07:08 PM
+-- Generation Time: Dec 25, 2025 at 12:25 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -50,6 +50,15 @@ CREATE TABLE `caretakers` (
   `emergencyContact` varchar(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `caretakers`
+--
+
+INSERT INTO `caretakers` (`caretakerID`, `relationship`, `emergencyContact`) VALUES
+('U_694c2c9d7f859', '', ''),
+('U_694c2c9f9052b', '', ''),
+('U_694c2f23a0f30', '', '');
+
 -- --------------------------------------------------------
 
 --
@@ -89,7 +98,11 @@ CREATE TABLE `diet_plans` (
 
 INSERT INTO `diet_plans` (`dietPlanID`, `elderlyID`, `createdAt`) VALUES
 ('DP_6946350deaa6f', 'U_6943abac29ea8', '2025-12-20 13:33:01'),
-('DP_6946e5cbf21c1', 'U_6946e59b595dc', '2025-12-21 02:07:07');
+('DP_6946e5cbf21c1', 'U_6946e59b595dc', '2025-12-21 02:07:07'),
+('DP_694c2d8747991', 'U_694c2d782ecc8', '2025-12-25 02:14:31'),
+('DP_694c2e778ca16', 'U_694c2c9f9052b', '2025-12-25 02:18:31'),
+('DP_694c398b02024', 'U_694c2f939ab92', '2025-12-25 03:05:47'),
+('DP_694c6b3ad4fc5', 'U_694c6afb880bc', '2025-12-25 06:37:46');
 
 -- --------------------------------------------------------
 
@@ -110,7 +123,8 @@ CREATE TABLE `diet_plan_approvals` (
 --
 
 INSERT INTO `diet_plan_approvals` (`approvalID`, `dietPlanID`, `dietitianID`, `status`, `approvalDate`) VALUES
-('AP_6946350deadd2', 'DP_6946350deaa6f', 'U_6945662a244b0', 'Approved', '2025-12-20 14:00:06');
+('AP_6946350deadd2', 'DP_6946350deaa6f', 'U_6945662a244b0', 'Approved', '2025-12-25 05:51:23'),
+('AP_694c6b3ad52e0', 'DP_694c6b3ad4fc5', 'U_6945662a244b0', 'Approved', '2025-12-25 07:01:33');
 
 -- --------------------------------------------------------
 
@@ -129,8 +143,15 @@ CREATE TABLE `elderly` (
 --
 
 INSERT INTO `elderly` (`elderlyID`, `caretakerID`, `assignedDietitianID`) VALUES
-('U_6943abac29ea8', NULL, NULL),
-('U_6946e59b595dc', NULL, 'U_694693812f6a3');
+('U_6943abac29ea8', NULL, 'U_6945662a244b0'),
+('U_6946e59b595dc', NULL, 'U_694693812f6a3'),
+('U_694c2219a7a17', NULL, 'U_694693812ff86'),
+('U_694c2c9d7f859', NULL, NULL),
+('U_694c2c9f9052b', NULL, NULL),
+('U_694c2d782ecc8', NULL, 'U_694693812f6a3'),
+('U_694c2f23a0f30', NULL, NULL),
+('U_694c2f939ab92', NULL, 'U_6945662a244b0'),
+('U_694c6afb880bc', NULL, 'U_6945662a244b0');
 
 -- --------------------------------------------------------
 
@@ -170,7 +191,97 @@ INSERT INTO `foods` (`foodID`, `mealID`, `recipeID`, `foodName`) VALUES
 ('F_6946352a61beb', 'M_6946352a61a8a', 'R_6946352a61b1d', 'Shrimp and Vegetable Stir-fry (Chinese)'),
 ('F_6946352a61e23', 'M_6946352a61c6f', 'R_6946352a61d4f', 'Cereal (Whole Grain) with Almond Milk and Berries'),
 ('F_6946352a620b7', 'M_6946352a61ea6', 'R_6946352a61f32', 'Chicken Salad Sandwich (Whole Wheat Bread)'),
-('F_6946352a622fc', 'M_6946352a62166', 'R_6946352a62206', 'Steamed Fish with Brown Rice and Green Beans');
+('F_6946352a622fc', 'M_6946352a62166', 'R_6946352a62206', 'Steamed Fish with Brown Rice and Green Beans'),
+('F_694c6b50cd36f', 'M_694c6b50ccc0e', 'R_694c6b50ccd63', 'Oatmeal with Berries & Seeds (Dairy-Free)'),
+('F_694c6b50cd8da', 'M_694c6b50cd6d8', 'R_694c6b50cd7aa', 'Chicken & Vegetable Stir-Fry (Chinese Style)'),
+('F_694c6b50cdaeb', 'M_694c6b50cd96f', 'R_694c6b50cda1b', 'Baked Salmon with Roasted Asparagus & Sweet Potato'),
+('F_694c6b50cdcd3', 'M_694c6b50cdb6d', 'R_694c6b50cdc0f', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)'),
+('F_694c6b50ce4bf', 'M_694c6b50cdd4b', 'R_694c6b50cde58', 'Japanese Chicken Donburi (Rice Bowl)'),
+('F_694c6b50ce696', 'M_694c6b50ce52a', 'R_694c6b50ce5d5', 'Lentil Soup with Whole-Wheat Bread'),
+('F_694c6b50ce86f', 'M_694c6b50ce700', 'R_694c6b50ce79d', 'Dairy-Free Yogurt with Granola & Fruit'),
+('F_694c6b50ceaa0', 'M_694c6b50ce8e8', 'R_694c6b50ce9ac', 'Shrimp & Broccoli Stir-Fry (Chinese)'),
+('F_694c6b50cec6b', 'M_694c6b50ceb0b', 'R_694c6b50cebab', 'Baked Cod with Quinoa & Green Beans'),
+('F_694c6b50cee3a', 'M_694c6b50cecd4', 'R_694c6b50ced76', 'Smoothie (Dairy-Free, Soy-Free)'),
+('F_694c6b50cf6ec', 'M_694c6b50cef7d', 'R_694c6b50cf60c', 'Chicken Salad (Dairy-Free) on Lettuce Wraps'),
+('F_694c6b50cf8bc', 'M_694c6b50cf75b', 'R_694c6b50cf7fa', 'Japanese Vegetable Tempura with Brown Rice'),
+('F_694c6b50cfa80', 'M_694c6b50cf932', 'R_694c6b50cf9bf', 'Rice Porridge (Japanese Style) with Fruit'),
+('F_694c6b50cfc34', 'M_694c6b50cfae8', 'R_694c6b50cfb77', 'Beef and Broccoli Stir-Fry (Chinese)'),
+('F_694c6b50cff18', 'M_694c6b50cfc9d', 'R_694c6b50cfd77', 'Baked Chicken Breast with Roasted Root Vegetables'),
+('F_694c6b50d011a', 'M_694c6b50cffb6', 'R_694c6b50d0051', 'Dairy-Free Yogurt with Berries and Flax Seeds'),
+('F_694c6b50d0316', 'M_694c6b50d018a', 'R_694c6b50d0243', 'Japanese Udon Noodle Soup (Vegetable)'),
+('F_694c6b50d0513', 'M_694c6b50d037f', 'R_694c6b50d0417', 'Turkey Meatloaf with Mashed Cauliflower & Steamed Spinach'),
+('F_694c6b50d0714', 'M_694c6b50d058b', 'R_694c6b50d0621', 'Dairy-Free Oatmeal with Apple & Cinnamon'),
+('F_694c6b50d08f9', 'M_694c6b50d078c', 'R_694c6b50d082d', 'Chicken and Vegetable Skewers with Brown Rice'),
+('F_694c6b50d0abb', 'M_694c6b50d0962', 'R_694c6b50d09f8', 'Baked Halibut with Steamed Broccoli & Quinoa'),
+('F_694c6b65d4971', 'M_694c6b65d44ef', 'R_694c6b65d485d', 'Oatmeal with Berries & Seeds (Dairy-Free)'),
+('F_694c6b65d4ba2', 'M_694c6b65d4a2e', 'R_694c6b65d4ad7', 'Chicken & Vegetable Stir-Fry (Chinese Style)'),
+('F_694c6b65d4d82', 'M_694c6b65d4c19', 'R_694c6b65d4cbe', 'Baked Salmon with Roasted Asparagus & Sweet Potato'),
+('F_694c6b65d4fc0', 'M_694c6b65d4df3', 'R_694c6b65d4ec6', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)'),
+('F_694c6b65d5254', 'M_694c6b65d5043', 'R_694c6b65d5162', 'Japanese Chicken Donburi (Rice Bowl)'),
+('F_694c6b65d5477', 'M_694c6b65d52e6', 'R_694c6b65d53b2', 'Lentil Soup with Whole-Wheat Bread'),
+('F_694c6b65d5621', 'M_694c6b65d54e6', 'R_694c6b65d5567', 'Dairy-Free Yogurt with Granola & Fruit'),
+('F_694c6b65d57d0', 'M_694c6b65d5686', 'R_694c6b65d5711', 'Shrimp & Broccoli Stir-Fry (Chinese)'),
+('F_694c6b65d599d', 'M_694c6b65d5835', 'R_694c6b65d58d3', 'Baked Cod with Quinoa & Green Beans'),
+('F_694c6b65d5b77', 'M_694c6b65d5a13', 'R_694c6b65d5aab', 'Smoothie (Dairy-Free, Soy-Free)'),
+('F_694c6b65d5d1f', 'M_694c6b65d5bde', 'R_694c6b65d5c66', 'Chicken Salad (Dairy-Free) on Lettuce Wraps'),
+('F_694c6b65d5ed8', 'M_694c6b65d5d84', 'R_694c6b65d5e04', 'Japanese Vegetable Tempura with Brown Rice'),
+('F_694c6b65d60db', 'M_694c6b65d5f42', 'R_694c6b65d5ff1', 'Rice Porridge (Congee) with Chicken & Ginger'),
+('F_694c6b65d631f', 'M_694c6b65d6150', 'R_694c6b65d6218', 'Tofu (Soy-Free alternative) and Vegetable Noodle Bowl'),
+('F_694c6b65d652c', 'M_694c6b65d63b8', 'R_694c6b65d6443', 'Baked Halibut with Roasted Root Vegetables'),
+('F_694c6b65d671d', 'M_694c6b65d659a', 'R_694c6b65d6634', 'Dairy-Free Yogurt with Berries and Flax Seeds'),
+('F_694c6b65d6956', 'M_694c6b65d67c7', 'R_694c6b65d6877', 'Chicken and Vegetable Skewers with Brown Rice'),
+('F_694c6b65d701a', 'M_694c6b65d69c2', 'R_694c6b65d6a57', 'Miso Soup with Tofu (Soy-Free alternative) and Seaweed'),
+('F_694c6b65d72a5', 'M_694c6b65d70b3', 'R_694c6b65d71bb', 'Dairy-Free Oatmeal with Apple & Cinnamon'),
+('F_694c6b65d7496', 'M_694c6b65d731e', 'R_694c6b65d73d6', 'Japanese Curry with Rice (Vegetable-Based)'),
+('F_694c6b65d766e', 'M_694c6b65d74fe', 'R_694c6b65d7597', 'Baked Tilapia with Steamed Broccoli & Quinoa'),
+('F_694c6b7b3db86', 'M_694c6b7b3d8b1', 'R_694c6b7b3da52', 'Oatmeal with Berries & Seeds (Dairy-Free)'),
+('F_694c6b7b3ddc1', 'M_694c6b7b3dc20', 'R_694c6b7b3dce0', 'Chicken & Vegetable Stir-Fry (Chinese Style)'),
+('F_694c6b7b3e016', 'M_694c6b7b3de51', 'R_694c6b7b3df27', 'Baked Salmon with Roasted Asparagus & Sweet Potato'),
+('F_694c6b7b3e243', 'M_694c6b7b3e098', 'R_694c6b7b3e13f', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)'),
+('F_694c6b7b3e589', 'M_694c6b7b3e2dc', 'R_694c6b7b3e3a5', 'Japanese Chicken Donburi (Rice Bowl)'),
+('F_694c6b7b3e82b', 'M_694c6b7b3e64c', 'R_694c6b7b3e718', 'Lentil Soup with Whole-Wheat Bread'),
+('F_694c6b7b3eb2d', 'M_694c6b7b3e91e', 'R_694c6b7b3ea19', 'Dairy-Free Yogurt with Granola & Fruit'),
+('F_694c6b7b3edd4', 'M_694c6b7b3ebd8', 'R_694c6b7b3eca0', 'Shrimp & Broccoli Stir-Fry (Chinese)'),
+('F_694c6b7b3f8d1', 'M_694c6b7b3ee76', 'R_694c6b7b3f788', 'Baked Cod with Quinoa & Green Beans'),
+('F_694c6b7b3fc70', 'M_694c6b7b3fa54', 'R_694c6b7b3fb1c', 'Smoothie (Dairy-Free, Soy-Free)'),
+('F_694c6b7b3feee', 'M_694c6b7b3fd28', 'R_694c6b7b3fdec', 'Chicken Salad (Dairy-Free) on Lettuce Wraps'),
+('F_694c6b7b40138', 'M_694c6b7b3ff8a', 'R_694c6b7b4005f', 'Japanese Vegetable Tempura with Brown Rice'),
+('F_694c6b7b403fe', 'M_694c6b7b401df', 'R_694c6b7b4027f', 'Rice Porridge (Japanese Style) with Fruit'),
+('F_694c6b7b40701', 'M_694c6b7b40506', 'R_694c6b7b405d0', 'Turkey & Vegetable Roll-Ups'),
+('F_694c6b7b40969', 'M_694c6b7b40797', 'R_694c6b7b40849', 'Chicken and Vegetable Curry (Chinese Style, Dairy-Free)'),
+('F_694c6b7b40e05', 'M_694c6b7b40a27', 'R_694c6b7b40b3d', 'Dairy-Free Yogurt with Berries and Flax Seeds'),
+('F_694c6b7b41125', 'M_694c6b7b40ec7', 'R_694c6b7b40fc4', 'Japanese Udon Noodle Soup (Vegetable)'),
+('F_694c6b7b413f7', 'M_694c6b7b411d7', 'R_694c6b7b412b6', 'Baked Chicken with Roasted Root Vegetables'),
+('F_694c6b7b416e2', 'M_694c6b7b414d7', 'R_694c6b7b415b6', 'Dairy-Free Pancakes with Berries'),
+('F_694c6b7b4193b', 'M_694c6b7b41784', 'R_694c6b7b41843', 'Chicken and Rice Soup (Chinese Style)'),
+('F_694c6b7b41c35', 'M_694c6b7b419d8', 'R_694c6b7b41aa7', 'Baked Halibut with Steamed Bok Choy & Brown Rice'),
+('F_694c6b92539aa', 'M_694c6b92536d9', 'R_694c6b925385d', 'Oatmeal with Berries & Seeds (Dairy-Free)'),
+('F_694c6b9253c60', 'M_694c6b9253a52', 'R_694c6b9253b3a', 'Chicken & Vegetable Stir-Fry (Chinese Style)'),
+('F_694c6b9253efa', 'M_694c6b9253d10', 'R_694c6b9253ddb', 'Baked Salmon with Roasted Asparagus & Sweet Potato'),
+('F_694c6b92541e2', 'M_694c6b9253fbb', 'R_694c6b92540af', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)'),
+('F_694c6b9254445', 'M_694c6b925427b', 'R_694c6b925433e', 'Japanese Chicken Donburi (Rice Bowl)'),
+('F_694c6b9254641', 'M_694c6b92544c9', 'R_694c6b925456f', 'Lentil Soup with Whole-Wheat Bread'),
+('F_694c6b925486f', 'M_694c6b92546c1', 'R_694c6b925477b', 'Dairy-Free Yogurt with Granola & Fruit'),
+('F_694c6b9254a55', 'M_694c6b92548e4', 'R_694c6b9254989', 'Shrimp & Broccoli Stir-Fry (Chinese)'),
+('F_694c6b9254c81', 'M_694c6b9254af2', 'R_694c6b9254b90', 'Baked Cod with Quinoa & Green Beans'),
+('F_694c6b9254e96', 'M_694c6b9254d08', 'R_694c6b9254dac', 'Smoothie (Dairy-Free, Soy-Free)'),
+('F_694c6b92550cc', 'M_694c6b9254f18', 'R_694c6b9254fb7', 'Chicken Salad (Dairy-Free) on Lettuce Wraps'),
+('F_694c6b92555db', 'M_694c6b925516c', 'R_694c6b925523a', 'Japanese Vegetable Tempura with Brown Rice'),
+('F_694c6b925587d', 'M_694c6b925567f', 'R_694c6b9255785', 'Rice Porridge with Fruit'),
+('F_694c6b9255ac1', 'M_694c6b925591c', 'R_694c6b92559de', 'Beef and Broccoli (Chinese)'),
+('F_694c6b9255c8d', 'M_694c6b9255b2b', 'R_694c6b9255bc7', 'Baked Tilapia with Roasted Brussels Sprouts & Mashed Cauliflower'),
+('F_694c6b9255e71', 'M_694c6b9255d0e', 'R_694c6b9255da1', 'Dairy-Free Yogurt with Berries and Flax Seeds'),
+('F_694c6b925606a', 'M_694c6b9255ee2', 'R_694c6b9255f85', 'Chicken Teriyaki Bowl (Japanese)'),
+('F_694c6b9256247', 'M_694c6b92560e6', 'R_694c6b925617c', 'Turkey Meatloaf with Steamed Carrots and Sweet Potato Mash'),
+('F_694c6b925649a', 'M_694c6b92562cb', 'R_694c6b9256364', 'Dairy-Free Oatmeal with Apple and Cinnamon'),
+('F_694c6b9256735', 'M_694c6b9256542', 'R_694c6b925660c', 'Japanese Udon Noodle Soup (Vegetable)'),
+('F_694c6b925694d', 'M_694c6b92567d0', 'R_694c6b9256870', 'Baked Halibut with Roasted Root Vegetables'),
+('F_694c6b9863964', 'M_694c6b9863593', 'R_694c6b986377e', 'Oatmeal with Berries and Seeds (Dairy-Free)'),
+('F_694c6b9864029', 'M_694c6b9863a71', 'R_694c6b9863b9c', 'Chicken and Vegetable Stir-Fry with Brown Rice (Chinese-Inspired)'),
+('F_694c6b98644a5', 'M_694c6b98641d9', 'R_694c6b986435d', 'Salmon with Steamed Bok Choy and Japanese-Style Rice'),
+('F_694c6b9fa7628', 'M_694c6b9fa732a', 'R_694c6b9fa74fe', 'Oatmeal with Berries and Seeds (Dairy-Free)'),
+('F_694c6b9fa7872', 'M_694c6b9fa76b0', 'R_694c6b9fa7776', 'Chicken and Vegetable Stir-Fry with Brown Rice (Chinese-Inspired)'),
+('F_694c6b9fa7b02', 'M_694c6b9fa78ec', 'R_694c6b9fa79de', 'Salmon with Steamed Bok Choy and Sweet Potato (Japanese-Inspired)');
 
 -- --------------------------------------------------------
 
@@ -197,7 +308,30 @@ CREATE TABLE `food_logs` (
 
 INSERT INTO `food_logs` (`logID`, `elderlyID`, `foodName`, `calories`, `protein`, `carbs`, `fibre`, `sugar`, `sodium`, `loggedAt`) VALUES
 ('L_6946400be147f', 'U_6943abac29ea8', 'Breakfast', 380, 12, 55, 8, 15, 150, '2025-12-20 14:19:55'),
-('L_6946ddbd20f53', 'U_6943abac29ea8', 'Nasi Lemak', 850, 35, 110, 8, 15, 1200, '2025-12-21 01:32:45');
+('L_6946ddbd20f53', 'U_6943abac29ea8', 'Nasi Lemak', 850, 35, 110, 8, 15, 1200, '2025-12-21 01:32:45'),
+('L_694c1dad61699', 'U_6943abac29ea8', 'Lunch', 440, 25, 40, 8, 6, 450, '2025-12-25 01:06:53'),
+('L_694c1dafaf907', 'U_6943abac29ea8', 'Breakfast', 360, 20, 45, 7, 18, 120, '2025-12-25 01:06:55'),
+('L_694c1db157952', 'U_6943abac29ea8', 'Dinner', 420, 35, 30, 7, 4, 320, '2025-12-25 01:06:57'),
+('L_694c24e6ae0f6', 'U_6943abac29ea8', 'water', 0, 0, 0, 0, 0, 0, '2025-12-25 01:37:42'),
+('L_694c635062ae4', 'U_6943abac29ea8', 'Breakfast', 360, 20, 45, 7, 18, 120, '2025-12-25 06:04:00'),
+('L_694c717a9105b', 'U_694c6afb880bc', 'Oatmeal with Berries & Seeds (Dairy-Free)', 380, 12, 60, 8, 15, 150, '2025-12-25 07:04:26'),
+('L_694c717c4a09d', 'U_694c6afb880bc', 'Chicken & Vegetable Stir-Fry (Chinese Style)', 550, 35, 65, 7, 10, 450, '2025-12-25 07:04:28'),
+('L_694c717e2070c', 'U_694c6afb880bc', 'Baked Salmon with Roasted Asparagus & Sweet Potato', 620, 40, 70, 10, 12, 300, '2025-12-25 07:04:30'),
+('L_694c7497e7699', 'U_694c6afb880bc', 'Water Intake', 0, 0, 0, 0, 0, 0, '2025-12-25 07:17:43'),
+('L_694c749b45533', 'U_694c6afb880bc', 'Water Intake', 0, 0, 0, 0, 0, 0, '2025-12-25 07:17:47');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `link_requests`
+--
+
+CREATE TABLE `link_requests` (
+  `requestID` int(11) NOT NULL,
+  `initiatorID` varchar(50) NOT NULL,
+  `targetID` varchar(50) NOT NULL,
+  `createdAt` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -244,7 +378,97 @@ INSERT INTO `meals` (`mealID`, `dietPlanID`, `mealType`, `totalCalories`, `total
 ('M_6946352a61a8a', 'DP_6946350deaa6f', 'Dinner', 410, 7, 30, 35, 380, 0, 6, 6),
 ('M_6946352a61c6f', 'DP_6946350deaa6f', 'Breakfast', 340, 10, 10, 60, 150, 0, 7, 15),
 ('M_6946352a61ea6', 'DP_6946350deaa6f', 'Lunch', 450, 8, 30, 40, 400, 0, 7, 5),
-('M_6946352a62166', 'DP_6946350deaa6f', 'Dinner', 400, 8, 30, 40, 300, 0, 7, 3);
+('M_6946352a62166', 'DP_6946350deaa6f', 'Dinner', 400, 8, 30, 40, 300, 0, 7, 3),
+('M_694c6b50ccc0e', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 8, 12, 60, 150, 0, 1, 15),
+('M_694c6b50cd6d8', 'DP_694c6b3ad4fc5', 'Lunch', 550, 7, 35, 65, 450, 0, 1, 10),
+('M_694c6b50cd96f', 'DP_694c6b3ad4fc5', 'Dinner', 620, 10, 40, 70, 300, 0, 1, 12),
+('M_694c6b50cdb6d', 'DP_694c6b3ad4fc5', 'Breakfast', 350, 3, 25, 15, 250, 0, 2, 2),
+('M_694c6b50cdd4b', 'DP_694c6b3ad4fc5', 'Lunch', 580, 6, 38, 75, 500, 0, 2, 15),
+('M_694c6b50ce52a', 'DP_694c6b3ad4fc5', 'Dinner', 600, 15, 30, 80, 400, 0, 2, 10),
+('M_694c6b50ce700', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 7, 15, 65, 180, 0, 3, 25),
+('M_694c6b50ce8e8', 'DP_694c6b3ad4fc5', 'Lunch', 560, 8, 40, 60, 480, 0, 3, 12),
+('M_694c6b50ceb0b', 'DP_694c6b3ad4fc5', 'Dinner', 610, 12, 45, 65, 320, 0, 3, 10),
+('M_694c6b50cecd4', 'DP_694c6b3ad4fc5', 'Breakfast', 370, 7, 18, 55, 100, 0, 4, 20),
+('M_694c6b50cef7d', 'DP_694c6b3ad4fc5', 'Lunch', 540, 5, 35, 45, 420, 0, 4, 8),
+('M_694c6b50cf75b', 'DP_694c6b3ad4fc5', 'Dinner', 630, 10, 25, 80, 380, 0, 4, 15),
+('M_694c6b50cf932', 'DP_694c6b3ad4fc5', 'Breakfast', 360, 5, 8, 70, 120, 0, 5, 20),
+('M_694c6b50cfae8', 'DP_694c6b3ad4fc5', 'Lunch', 570, 8, 40, 65, 460, 0, 5, 12),
+('M_694c6b50cfc9d', 'DP_694c6b3ad4fc5', 'Dinner', 600, 10, 45, 60, 350, 0, 5, 10),
+('M_694c6b50cffb6', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 8, 14, 60, 160, 0, 6, 20),
+('M_694c6b50d018a', 'DP_694c6b3ad4fc5', 'Lunch', 550, 7, 20, 80, 490, 0, 6, 15),
+('M_694c6b50d037f', 'DP_694c6b3ad4fc5', 'Dinner', 620, 10, 40, 55, 330, 0, 6, 12),
+('M_694c6b50d058b', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 8, 10, 65, 140, 0, 7, 18),
+('M_694c6b50d078c', 'DP_694c6b3ad4fc5', 'Lunch', 560, 7, 38, 65, 470, 0, 7, 12),
+('M_694c6b50d0962', 'DP_694c6b3ad4fc5', 'Dinner', 610, 12, 45, 60, 340, 0, 7, 10),
+('M_694c6b65d44ef', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 8, 12, 60, 150, 0, 8, 15),
+('M_694c6b65d4a2e', 'DP_694c6b3ad4fc5', 'Lunch', 550, 7, 35, 65, 450, 0, 8, 10),
+('M_694c6b65d4c19', 'DP_694c6b3ad4fc5', 'Dinner', 620, 10, 40, 70, 300, 0, 8, 12),
+('M_694c6b65d4df3', 'DP_694c6b3ad4fc5', 'Breakfast', 350, 3, 25, 15, 250, 0, 9, 5),
+('M_694c6b65d5043', 'DP_694c6b3ad4fc5', 'Lunch', 580, 6, 38, 75, 500, 0, 9, 15),
+('M_694c6b65d52e6', 'DP_694c6b3ad4fc5', 'Dinner', 600, 15, 30, 80, 400, 0, 9, 10),
+('M_694c6b65d54e6', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 10, 15, 65, 180, 0, 10, 20),
+('M_694c6b65d5686', 'DP_694c6b3ad4fc5', 'Lunch', 560, 8, 40, 60, 480, 0, 10, 12),
+('M_694c6b65d5835', 'DP_694c6b3ad4fc5', 'Dinner', 610, 12, 45, 65, 320, 0, 10, 10),
+('M_694c6b65d5a13', 'DP_694c6b3ad4fc5', 'Breakfast', 370, 10, 18, 55, 100, 0, 11, 20),
+('M_694c6b65d5bde', 'DP_694c6b3ad4fc5', 'Lunch', 540, 6, 35, 45, 420, 0, 11, 10),
+('M_694c6b65d5d84', 'DP_694c6b3ad4fc5', 'Dinner', 630, 12, 25, 80, 380, 0, 11, 15),
+('M_694c6b65d5f42', 'DP_694c6b3ad4fc5', 'Breakfast', 410, 5, 20, 65, 220, 0, 12, 10),
+('M_694c6b65d6150', 'DP_694c6b3ad4fc5', 'Lunch', 550, 10, 30, 70, 460, 0, 12, 15),
+('M_694c6b65d63b8', 'DP_694c6b3ad4fc5', 'Dinner', 600, 10, 40, 60, 350, 0, 12, 12),
+('M_694c6b65d659a', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 12, 14, 60, 160, 0, 13, 18),
+('M_694c6b65d67c7', 'DP_694c6b3ad4fc5', 'Lunch', 570, 8, 38, 65, 470, 0, 13, 12),
+('M_694c6b65d69c2', 'DP_694c6b3ad4fc5', 'Dinner', 620, 15, 35, 75, 400, 0, 13, 10),
+('M_694c6b65d70b3', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 9, 13, 65, 170, 0, 14, 16),
+('M_694c6b65d731e', 'DP_694c6b3ad4fc5', 'Lunch', 560, 10, 28, 75, 490, 0, 14, 15),
+('M_694c6b65d74fe', 'DP_694c6b3ad4fc5', 'Dinner', 610, 11, 42, 65, 330, 0, 14, 10),
+('M_694c6b7b3d8b1', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 8, 12, 60, 150, 0, 15, 15),
+('M_694c6b7b3dc20', 'DP_694c6b3ad4fc5', 'Lunch', 550, 10, 35, 65, 450, 0, 15, 10),
+('M_694c6b7b3de51', 'DP_694c6b3ad4fc5', 'Dinner', 620, 12, 40, 70, 300, 0, 15, 12),
+('M_694c6b7b3e098', 'DP_694c6b3ad4fc5', 'Breakfast', 350, 4, 25, 15, 250, 0, 16, 3),
+('M_694c6b7b3e2dc', 'DP_694c6b3ad4fc5', 'Lunch', 580, 8, 38, 75, 500, 0, 16, 18),
+('M_694c6b7b3e64c', 'DP_694c6b3ad4fc5', 'Dinner', 600, 20, 30, 80, 400, 0, 16, 10),
+('M_694c6b7b3e91e', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 10, 15, 65, 180, 0, 17, 20),
+('M_694c6b7b3ebd8', 'DP_694c6b3ad4fc5', 'Lunch', 560, 12, 40, 60, 480, 0, 17, 12),
+('M_694c6b7b3ee76', 'DP_694c6b3ad4fc5', 'Dinner', 610, 15, 45, 65, 320, 0, 17, 10),
+('M_694c6b7b3fa54', 'DP_694c6b3ad4fc5', 'Breakfast', 370, 10, 18, 55, 120, 0, 18, 25),
+('M_694c6b7b3fd28', 'DP_694c6b3ad4fc5', 'Lunch', 540, 8, 35, 45, 420, 0, 18, 10),
+('M_694c6b7b3ff8a', 'DP_694c6b3ad4fc5', 'Dinner', 630, 15, 25, 80, 450, 0, 18, 20),
+('M_694c6b7b401df', 'DP_694c6b3ad4fc5', 'Breakfast', 360, 8, 10, 70, 150, 0, 19, 20),
+('M_694c6b7b40506', 'DP_694c6b3ad4fc5', 'Lunch', 550, 10, 40, 40, 400, 0, 19, 10),
+('M_694c6b7b40797', 'DP_694c6b3ad4fc5', 'Dinner', 620, 15, 35, 75, 480, 0, 19, 15),
+('M_694c6b7b40a27', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 12, 14, 60, 160, 0, 20, 20),
+('M_694c6b7b40ec7', 'DP_694c6b3ad4fc5', 'Lunch', 570, 12, 28, 80, 520, 0, 20, 18),
+('M_694c6b7b411d7', 'DP_694c6b3ad4fc5', 'Dinner', 600, 14, 42, 65, 350, 0, 20, 12),
+('M_694c6b7b414d7', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 10, 16, 65, 170, 0, 21, 22),
+('M_694c6b7b41784', 'DP_694c6b3ad4fc5', 'Lunch', 560, 10, 38, 65, 460, 0, 21, 15),
+('M_694c6b7b419d8', 'DP_694c6b3ad4fc5', 'Dinner', 610, 15, 45, 65, 330, 0, 21, 10),
+('M_694c6b92536d9', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 8, 12, 60, 150, 0, 22, 15),
+('M_694c6b9253a52', 'DP_694c6b3ad4fc5', 'Lunch', 550, 7, 35, 65, 450, 0, 22, 10),
+('M_694c6b9253d10', 'DP_694c6b3ad4fc5', 'Dinner', 620, 10, 40, 70, 300, 0, 22, 12),
+('M_694c6b9253fbb', 'DP_694c6b3ad4fc5', 'Breakfast', 350, 3, 25, 15, 250, 0, 23, 2),
+('M_694c6b925427b', 'DP_694c6b3ad4fc5', 'Lunch', 580, 6, 38, 75, 500, 0, 23, 15),
+('M_694c6b92544c9', 'DP_694c6b3ad4fc5', 'Dinner', 600, 15, 30, 80, 400, 0, 23, 10),
+('M_694c6b92546c1', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 7, 15, 65, 180, 0, 24, 25),
+('M_694c6b92548e4', 'DP_694c6b3ad4fc5', 'Lunch', 560, 8, 40, 60, 480, 0, 24, 12),
+('M_694c6b9254af2', 'DP_694c6b3ad4fc5', 'Dinner', 610, 12, 45, 65, 320, 0, 24, 10),
+('M_694c6b9254d08', 'DP_694c6b3ad4fc5', 'Breakfast', 370, 10, 18, 55, 100, 0, 25, 20),
+('M_694c6b9254f18', 'DP_694c6b3ad4fc5', 'Lunch', 540, 5, 35, 45, 420, 0, 25, 8),
+('M_694c6b925516c', 'DP_694c6b3ad4fc5', 'Dinner', 630, 10, 25, 80, 450, 0, 25, 15),
+('M_694c6b925567f', 'DP_694c6b3ad4fc5', 'Breakfast', 360, 5, 8, 70, 120, 0, 26, 25),
+('M_694c6b925591c', 'DP_694c6b3ad4fc5', 'Lunch', 570, 8, 40, 60, 470, 0, 26, 12),
+('M_694c6b9255b2b', 'DP_694c6b3ad4fc5', 'Dinner', 600, 13, 42, 65, 330, 0, 26, 10),
+('M_694c6b9255d0e', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 10, 14, 60, 160, 0, 27, 20),
+('M_694c6b9255ee2', 'DP_694c6b3ad4fc5', 'Lunch', 550, 7, 38, 65, 490, 0, 27, 15),
+('M_694c6b92560e6', 'DP_694c6b3ad4fc5', 'Dinner', 620, 11, 40, 70, 350, 0, 27, 12),
+('M_694c6b92562cb', 'DP_694c6b3ad4fc5', 'Breakfast', 390, 9, 10, 65, 140, 0, 28, 18),
+('M_694c6b9256542', 'DP_694c6b3ad4fc5', 'Lunch', 560, 10, 28, 80, 500, 0, 28, 15),
+('M_694c6b92567d0', 'DP_694c6b3ad4fc5', 'Dinner', 610, 12, 45, 65, 340, 0, 28, 10),
+('M_694c6b9863593', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 10, 12, 55, 5, 0, 29, 15),
+('M_694c6b9863a71', 'DP_694c6b3ad4fc5', 'Lunch', 580, 8, 35, 65, 250, 0, 29, 10),
+('M_694c6b98641d9', 'DP_694c6b3ad4fc5', 'Dinner', 490, 6, 38, 45, 150, 0, 29, 5),
+('M_694c6b9fa732a', 'DP_694c6b3ad4fc5', 'Breakfast', 380, 10, 12, 55, 5, 0, 30, 15),
+('M_694c6b9fa76b0', 'DP_694c6b3ad4fc5', 'Lunch', 580, 8, 35, 65, 250, 0, 30, 10),
+('M_694c6b9fa78ec', 'DP_694c6b3ad4fc5', 'Dinner', 490, 7, 32, 45, 150, 0, 30, 12);
 
 -- --------------------------------------------------------
 
@@ -266,7 +490,12 @@ CREATE TABLE `messages` (
 --
 
 INSERT INTO `messages` (`messageID`, `senderID`, `receiverID`, `message`, `sentAt`, `isRead`) VALUES
-('MSG_6946e5ec3e075', 'U_6946e59b595dc', 'U_694693812f6a3', 'Hello', '2025-12-21 02:07:40', 0);
+('MSG_6946e5ec3e075', 'U_6946e59b595dc', 'U_694693812f6a3', 'Hello', '2025-12-21 02:07:40', 0),
+('MSG_694c1d837f350', 'U_6943abac29ea8', 'U_6945662a244b0', 'hello?', '2025-12-25 01:06:11', 0),
+('MSG_694c1d964656c', 'U_6945662a244b0', 'U_6943abac29ea8', 'hi', '2025-12-25 01:06:30', 0),
+('MSG_694c3647727db', 'U_694c2c9f9052b', 'U_6945662a244b0', 'Hello, pls change his mcdonalds diet', '2025-12-25 02:51:51', 0),
+('MSG_694c619063198', 'U_6945662a244b0', 'U_694c2c9f9052b', 'okok', '2025-12-25 05:56:32', 0),
+('MSG_694c61c6b8098', 'U_6945662a244b0', 'U_6943abac29ea8', 'you should stop eating sugar', '2025-12-25 05:57:26', 0);
 
 -- --------------------------------------------------------
 
@@ -296,8 +525,10 @@ CREATE TABLE `profiles` (
 --
 
 INSERT INTO `profiles` (`profileID`, `elderlyID`, `height`, `weight`, `bmi`, `allergies`, `healthCondition`, `caloriesLimit`, `carbsLimit`, `sugarLimit`, `sodiumLimit`, `fibreRequirement`, `softFoodRequirement`, `medicationList`) VALUES
-('P_6943ade09ffc3', 'U_6943abac29ea8', 166, 66, 23.951226593119, '[\"\"]', '[\"Diabetes\"]', 1647, 185, 20, 2300, 25, 0, '[\"\"]'),
-('P_6946e5c654f03', 'U_6946e59b595dc', 180, 60, 18.518518518519, '[\"\"]', '[\"Diabetes\"]', 1776, 200, 20, 2300, 25, 0, '[\"\"]');
+('P_6943ade09ffc3', 'U_6943abac29ea8', 166, 66, 23.951226593119, '[\"Milk (Lactose Intolerance)\",\"Wheat (Gluten)\"]', '[\"Diabetes\"]', 1647, 185, 20, 2300, 30, 0, '[\"\"]'),
+('P_6946e5c654f03', 'U_6946e59b595dc', 180, 60, 18.518518518519, '[\"\"]', '[\"Diabetes\"]', 1776, 200, 20, 2300, 25, 0, '[\"\"]'),
+('P_694c2d86136f1', 'U_694c2d782ecc8', 166, 66, 23.951226593119, '[]', '[\"Diabetes\"]', 1629, 183, 20, 2300, 30, 0, '[\"\"]'),
+('P_694c6b1a5adf8', 'U_694c6afb880bc', 170, 70, 24.221453287197, '[\"Peanuts\",\"Milk (Lactose Intolerance)\",\"Soy\"]', '[\"Heart Disease\"]', 1971, 246, 30, 1500, 25, 1, '[\"\"]');
 
 -- --------------------------------------------------------
 
@@ -331,7 +562,12 @@ CREATE TABLE `progress` (
 
 INSERT INTO `progress` (`progressID`, `elderlyID`, `dietPlanID`, `date`, `caloriesTaken`, `proteinTaken`, `carbohydrateTaken`, `fatTaken`, `fiberTaken`, `sodiumTaken`, `sugarTaken`, `waterIntake`, `mealTextureType`, `mealCompletedCount`, `progressStatus`, `state`, `lastUpdated`) VALUES
 ('PG_69463537081e5', 'U_6943abac29ea8', 'DP_6946350deaa6f', '2025-12-20', 2460, 94, 330, 0, 32, 2450, 90, 2.3, NULL, 0, NULL, 'Red', '2025-12-21 01:32:45'),
-('PG_6946e5cbf24ed', 'U_6946e59b595dc', 'DP_6946e5cbf21c1', '2025-12-20', 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0, NULL, 'Green', '2025-12-21 02:07:07');
+('PG_6946e5cbf24ed', 'U_6946e59b595dc', 'DP_6946e5cbf21c1', '2025-12-20', 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0, NULL, 'Green', '2025-12-21 02:07:07'),
+('PG_694c1d28b45c6', 'U_6943abac29ea8', 'DP_6946350deaa6f', '2025-12-24', 1580, 100, 160, 0, 29, 1010, 46, 2, NULL, 0, NULL, 'Yellow', '2025-12-25 06:04:00'),
+('PG_694c2d8747c9c', 'U_694c2d782ecc8', 'DP_694c2d8747991', '2025-12-24', 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0, NULL, 'Green', '2025-12-25 02:14:31'),
+('PG_694c2e778d23b', 'U_694c2c9f9052b', 'DP_694c2e778ca16', '2025-12-24', 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0, NULL, 'Green', '2025-12-25 02:18:31'),
+('PG_694c398b023b7', 'U_694c2f939ab92', 'DP_694c398b02024', '2025-12-24', 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0, NULL, 'Green', '2025-12-25 03:05:47'),
+('PG_694c6d806a38b', 'U_694c6afb880bc', 'DP_694c6b3ad4fc5', '2025-12-24', 1550, 87, 195, 0, 25, 900, 37, 2, NULL, 0, NULL, 'Yellow', '2025-12-25 07:17:47');
 
 -- --------------------------------------------------------
 
@@ -838,7 +1074,120 @@ INSERT INTO `recipes` (`recipeID`, `name`, `ingredients`, `calories`, `protein`,
 ('R_6946352a61b1d', 'Shrimp and Vegetable Stir-fry (Chinese)', '[\"4oz shrimp\",\"1 cup mixed vegetables (broccoli, snap peas, carrots)\",\"1 tbsp low-sodium soy sauce\",\"1 tsp sesame oil\"]', 410, 30, 35, 7, 10, 380, NULL, NULL),
 ('R_6946352a61d4f', 'Cereal (Whole Grain) with Almond Milk and Berries', '[\"1 cup whole-grain cereal\",\"1 cup unsweetened almond milk\",\"1\\/2 cup mixed berries\"]', 340, 10, 60, 10, 6, 150, NULL, NULL),
 ('R_6946352a61f32', 'Chicken Salad Sandwich (Whole Wheat Bread)', '[\"4oz cooked chicken\",\"2 slices whole-wheat bread\",\"1 tbsp light mayonnaise\",\"lettuce, tomato\"]', 450, 30, 40, 8, 18, 400, NULL, NULL),
-('R_6946352a62206', 'Steamed Fish with Brown Rice and Green Beans', '[\"4oz steamed fish\",\"1\\/2 cup brown rice\",\"1 cup green beans\",\"1 tbsp soy sauce (low sodium)\"]', 400, 30, 40, 8, 8, 300, NULL, NULL);
+('R_6946352a62206', 'Steamed Fish with Brown Rice and Green Beans', '[\"4oz steamed fish\",\"1\\/2 cup brown rice\",\"1 cup green beans\",\"1 tbsp soy sauce (low sodium)\"]', 400, 30, 40, 8, 8, 300, NULL, NULL),
+('R_694c6b50ccd63', 'Oatmeal with Berries & Seeds (Dairy-Free)', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 cup mixed berries (strawberries, blueberries)\",\"1 tbsp chia seeds\",\"1 tsp maple syrup\",\"cinnamon\"]', 380, 12, 60, 8, 12, 150, NULL, NULL),
+('R_694c6b50cd7aa', 'Chicken & Vegetable Stir-Fry (Chinese Style)', '[\"4oz chicken breast (cooked)\",\"1 cup mixed vegetables (broccoli, carrots, bell peppers)\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 550, 35, 65, 7, 18, 450, NULL, NULL),
+('R_694c6b50cda1b', 'Baked Salmon with Roasted Asparagus & Sweet Potato', '[\"4oz salmon fillet\",\"1 cup asparagus\",\"1 medium sweet potato\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs (dill, parsley)\"]', 620, 40, 70, 10, 25, 300, NULL, NULL),
+('R_694c6b50cdc0f', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)', '[\"2 eggs\",\"1 cup spinach\",\"1\\/2 tomato\",\"1 tbsp olive oil\",\"black pepper\"]', 350, 25, 15, 3, 20, 250, NULL, NULL),
+('R_694c6b50cde58', 'Japanese Chicken Donburi (Rice Bowl)', '[\"4oz cooked chicken\",\"1\\/2 cup cooked brown rice\",\"1\\/4 cup shredded carrots\",\"1\\/4 cup sliced mushrooms\",\"2 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"ginger, garlic\"]', 580, 38, 75, 6, 18, 500, NULL, NULL),
+('R_694c6b50ce5d5', 'Lentil Soup with Whole-Wheat Bread', '[\"1.5 cup lentil soup (low sodium)\",\"1 slice whole-wheat bread\"]', 600, 30, 80, 15, 15, 400, NULL, NULL),
+('R_694c6b50ce79d', 'Dairy-Free Yogurt with Granola & Fruit', '[\"1 cup dairy-free yogurt (coconut or almond)\",\"1\\/4 cup granola (check for peanut\\/soy free)\",\"1\\/2 cup berries\"]', 390, 15, 65, 7, 10, 180, NULL, NULL),
+('R_694c6b50ce9ac', 'Shrimp & Broccoli Stir-Fry (Chinese)', '[\"4oz shrimp\",\"1 cup broccoli florets\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 560, 40, 60, 8, 18, 480, NULL, NULL),
+('R_694c6b50cebab', 'Baked Cod with Quinoa & Green Beans', '[\"4oz cod fillet\",\"1\\/2 cup cooked quinoa\",\"1 cup green beans\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs\"]', 610, 45, 65, 12, 18, 320, NULL, NULL),
+('R_694c6b50ced76', 'Smoothie (Dairy-Free, Soy-Free)', '[\"1 cup spinach\",\"1\\/2 banana\",\"1\\/2 cup berries\",\"1 scoop dairy-free protein powder (pea or rice based)\",\"1 cup almond milk\"]', 370, 18, 55, 7, 10, 100, NULL, NULL),
+('R_694c6b50cf60c', 'Chicken Salad (Dairy-Free) on Lettuce Wraps', '[\"4oz cooked chicken\",\"1 tbsp dairy-free mayonnaise\",\"1\\/4 cup chopped celery\",\"lettuce leaves\"]', 540, 35, 45, 5, 25, 420, NULL, NULL),
+('R_694c6b50cf7fa', 'Japanese Vegetable Tempura with Brown Rice', '[\"1 cup vegetable tempura (lightly battered)\",\"1\\/2 cup brown rice\",\"tempura dipping sauce (low sodium)\"]', 630, 25, 80, 10, 22, 380, NULL, NULL),
+('R_694c6b50cf9bf', 'Rice Porridge (Japanese Style) with Fruit', '[\"1\\/2 cup cooked rice\",\"1 cup water\",\"1\\/4 cup chopped fruit (melon, peach)\",\"a pinch of salt\"]', 360, 8, 70, 5, 5, 120, NULL, NULL),
+('R_694c6b50cfb77', 'Beef and Broccoli Stir-Fry (Chinese)', '[\"4oz lean beef\",\"1 cup broccoli florets\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 570, 40, 65, 8, 18, 460, NULL, NULL),
+('R_694c6b50cfd77', 'Baked Chicken Breast with Roasted Root Vegetables', '[\"4oz chicken breast\",\"1 cup mixed root vegetables (carrots, parsnips)\",\"1 tbsp olive oil\",\"herbs\"]', 600, 45, 60, 10, 18, 350, NULL, NULL),
+('R_694c6b50d0051', 'Dairy-Free Yogurt with Berries and Flax Seeds', '[\"1 cup dairy-free yogurt (coconut or almond)\",\"1\\/2 cup mixed berries\",\"1 tbsp flax seeds\"]', 380, 14, 60, 8, 12, 160, NULL, NULL),
+('R_694c6b50d0243', 'Japanese Udon Noodle Soup (Vegetable)', '[\"1 cup udon noodles\",\"2 cups vegetable broth (low sodium)\",\"1\\/2 cup mixed vegetables (carrots, mushrooms, seaweed)\",\"ginger, garlic\"]', 550, 20, 80, 7, 15, 490, NULL, NULL);
+INSERT INTO `recipes` (`recipeID`, `name`, `ingredients`, `calories`, `protein`, `carbs`, `fibre`, `fat`, `sodium`, `preference`, `instructions`) VALUES
+('R_694c6b50d0417', 'Turkey Meatloaf with Mashed Cauliflower & Steamed Spinach', '[\"4oz ground turkey\",\"1\\/2 cup mashed cauliflower\",\"1 cup steamed spinach\",\"breadcrumbs (gluten-free, soy-free)\",\"herbs\"]', 620, 40, 55, 10, 22, 330, NULL, NULL),
+('R_694c6b50d0621', 'Dairy-Free Oatmeal with Apple & Cinnamon', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 apple (chopped)\",\"cinnamon\",\"1 tsp maple syrup\"]', 390, 10, 65, 8, 12, 140, NULL, NULL),
+('R_694c6b50d082d', 'Chicken and Vegetable Skewers with Brown Rice', '[\"4oz chicken breast (cubed)\",\"1 cup mixed vegetables (bell peppers, onions, zucchini)\",\"1\\/2 cup brown rice\",\"olive oil, herbs\"]', 560, 38, 65, 7, 18, 470, NULL, NULL),
+('R_694c6b50d09f8', 'Baked Halibut with Steamed Broccoli & Quinoa', '[\"4oz halibut fillet\",\"1 cup steamed broccoli\",\"1\\/2 cup cooked quinoa\",\"lemon juice\",\"herbs\"]', 610, 45, 60, 12, 18, 340, NULL, NULL),
+('R_694c6b65d485d', 'Oatmeal with Berries & Seeds (Dairy-Free)', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 cup mixed berries (strawberries, blueberries)\",\"1 tbsp chia seeds\",\"1 tsp maple syrup\",\"cinnamon\"]', 380, 12, 60, 8, 12, 150, NULL, NULL),
+('R_694c6b65d4ad7', 'Chicken & Vegetable Stir-Fry (Chinese Style)', '[\"4oz chicken breast (cooked)\",\"1 cup mixed vegetables (broccoli, carrots, bell peppers)\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 550, 35, 65, 7, 18, 450, NULL, NULL),
+('R_694c6b65d4cbe', 'Baked Salmon with Roasted Asparagus & Sweet Potato', '[\"4oz salmon fillet\",\"1 cup asparagus\",\"1 medium sweet potato\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs (dill, parsley)\"]', 620, 40, 70, 10, 25, 300, NULL, NULL),
+('R_694c6b65d4ec6', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)', '[\"2 eggs\",\"1 cup spinach\",\"1\\/2 tomato\",\"1 tbsp olive oil\",\"black pepper\"]', 350, 25, 15, 3, 20, 250, NULL, NULL),
+('R_694c6b65d5162', 'Japanese Chicken Donburi (Rice Bowl)', '[\"4oz cooked chicken\",\"1\\/2 cup cooked brown rice\",\"1\\/4 cup shredded carrots\",\"1\\/4 cup sliced mushrooms\",\"2 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"ginger, garlic\"]', 580, 38, 75, 6, 18, 500, NULL, NULL),
+('R_694c6b65d53b2', 'Lentil Soup with Whole-Wheat Bread', '[\"1.5 cup lentil soup (low sodium)\",\"1 slice whole-wheat bread\"]', 600, 30, 80, 15, 15, 400, NULL, NULL),
+('R_694c6b65d5567', 'Dairy-Free Yogurt with Granola & Fruit', '[\"1 cup dairy-free yogurt (coconut or almond)\",\"1\\/4 cup granola (check for peanut\\/soy free)\",\"1\\/2 cup berries\"]', 390, 15, 65, 10, 10, 180, NULL, NULL),
+('R_694c6b65d5711', 'Shrimp & Broccoli Stir-Fry (Chinese)', '[\"4oz shrimp\",\"1 cup broccoli florets\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 560, 40, 60, 8, 18, 480, NULL, NULL),
+('R_694c6b65d58d3', 'Baked Cod with Quinoa & Green Beans', '[\"4oz cod fillet\",\"1\\/2 cup cooked quinoa\",\"1 cup green beans\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs\"]', 610, 45, 65, 12, 18, 320, NULL, NULL),
+('R_694c6b65d5aab', 'Smoothie (Dairy-Free, Soy-Free)', '[\"1 cup spinach\",\"1\\/2 banana\",\"1\\/2 cup berries\",\"1 scoop dairy-free protein powder (pea or hemp)\",\"1 cup almond milk\"]', 370, 18, 55, 10, 10, 100, NULL, NULL),
+('R_694c6b65d5c66', 'Chicken Salad (Dairy-Free) on Lettuce Wraps', '[\"4oz cooked chicken\",\"1 tbsp dairy-free mayonnaise\",\"1\\/4 cup chopped celery\",\"lettuce leaves\"]', 540, 35, 45, 6, 25, 420, NULL, NULL),
+('R_694c6b65d5e04', 'Japanese Vegetable Tempura with Brown Rice', '[\"1 cup vegetable tempura (lightly battered)\",\"1\\/2 cup brown rice\",\"tempura dipping sauce (low sodium)\"]', 630, 25, 80, 12, 22, 380, NULL, NULL),
+('R_694c6b65d5ff1', 'Rice Porridge (Congee) with Chicken & Ginger', '[\"1\\/2 cup cooked rice\",\"2 cups water\",\"2oz cooked chicken\",\"1 tsp ginger\",\"green onions\"]', 410, 20, 65, 5, 10, 220, NULL, NULL),
+('R_694c6b65d6218', 'Tofu (Soy-Free alternative) and Vegetable Noodle Bowl', '[\"4oz soy-free tofu\",\"1 cup mixed vegetables (carrots, bell peppers, bean sprouts)\",\"1\\/2 cup rice noodles\",\"low-sodium soy sauce alternative (coconut aminos)\",\"sesame oil\"]', 550, 30, 70, 10, 18, 460, NULL, NULL),
+('R_694c6b65d6443', 'Baked Halibut with Roasted Root Vegetables', '[\"4oz halibut fillet\",\"1 cup roasted root vegetables (carrots, parsnips)\",\"1 tbsp olive oil\",\"herbs\"]', 600, 40, 60, 10, 20, 350, NULL, NULL),
+('R_694c6b65d6634', 'Dairy-Free Yogurt with Berries and Flax Seeds', '[\"1 cup dairy-free yogurt\",\"1\\/2 cup mixed berries\",\"1 tbsp flax seeds\"]', 380, 14, 60, 12, 12, 160, NULL, NULL),
+('R_694c6b65d6877', 'Chicken and Vegetable Skewers with Brown Rice', '[\"4oz chicken\",\"1 cup mixed vegetables (bell peppers, onions, zucchini)\",\"1\\/2 cup brown rice\",\"low-sodium soy sauce alternative (coconut aminos)\"]', 570, 38, 65, 8, 18, 470, NULL, NULL),
+('R_694c6b65d6a57', 'Miso Soup with Tofu (Soy-Free alternative) and Seaweed', '[\"1.5 cup miso soup (low sodium)\",\"4oz soy-free tofu\",\"1 tbsp dried seaweed\"]', 620, 35, 75, 15, 18, 400, NULL, NULL),
+('R_694c6b65d71bb', 'Dairy-Free Oatmeal with Apple & Cinnamon', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 apple (chopped)\",\"cinnamon\",\"maple syrup\"]', 390, 13, 65, 9, 11, 170, NULL, NULL),
+('R_694c6b65d73d6', 'Japanese Curry with Rice (Vegetable-Based)', '[\"1 cup vegetable curry (low sodium)\",\"1\\/2 cup brown rice\"]', 560, 28, 75, 10, 18, 490, NULL, NULL),
+('R_694c6b65d7597', 'Baked Tilapia with Steamed Broccoli & Quinoa', '[\"4oz tilapia fillet\",\"1 cup broccoli\",\"1\\/2 cup cooked quinoa\",\"lemon juice\",\"herbs\"]', 610, 42, 65, 11, 18, 330, NULL, NULL),
+('R_694c6b7b3da52', 'Oatmeal with Berries & Seeds (Dairy-Free)', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 cup mixed berries (strawberries, blueberries)\",\"1 tbsp chia seeds\",\"1 tsp maple syrup\",\"cinnamon\"]', 380, 12, 60, 8, 12, 150, NULL, NULL),
+('R_694c6b7b3dce0', 'Chicken & Vegetable Stir-Fry (Chinese Style)', '[\"4oz chicken breast (cooked)\",\"1 cup mixed vegetables (broccoli, carrots, bell peppers)\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 550, 35, 65, 10, 15, 450, NULL, NULL),
+('R_694c6b7b3df27', 'Baked Salmon with Roasted Asparagus & Sweet Potato', '[\"4oz salmon fillet\",\"1 cup asparagus\",\"1 medium sweet potato\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs (dill, parsley)\"]', 620, 40, 70, 12, 20, 300, NULL, NULL),
+('R_694c6b7b3e13f', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)', '[\"2 eggs\",\"1 cup spinach\",\"1\\/2 tomato\",\"1 tbsp olive oil\",\"black pepper\"]', 350, 25, 15, 4, 20, 250, NULL, NULL),
+('R_694c6b7b3e3a5', 'Japanese Chicken Donburi (Rice Bowl)', '[\"4oz cooked chicken\",\"1\\/2 cup cooked brown rice\",\"1\\/4 cup shredded carrots\",\"1\\/4 cup sliced mushrooms\",\"2 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"ginger, garlic\"]', 580, 38, 75, 8, 15, 500, NULL, NULL),
+('R_694c6b7b3e718', 'Lentil Soup with Whole-Wheat Bread', '[\"1.5 cup lentil soup (low sodium)\",\"1 slice whole-wheat bread\"]', 600, 30, 80, 20, 15, 400, NULL, NULL),
+('R_694c6b7b3ea19', 'Dairy-Free Yogurt with Granola & Fruit', '[\"1 cup dairy-free yogurt (coconut or almond)\",\"1\\/4 cup granola (check for peanut\\/soy free)\",\"1\\/2 cup berries\"]', 390, 15, 65, 10, 10, 180, NULL, NULL),
+('R_694c6b7b3eca0', 'Shrimp & Broccoli Stir-Fry (Chinese)', '[\"4oz shrimp\",\"1 cup broccoli florets\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 560, 40, 60, 12, 18, 480, NULL, NULL),
+('R_694c6b7b3f788', 'Baked Cod with Quinoa & Green Beans', '[\"4oz cod fillet\",\"1\\/2 cup cooked quinoa\",\"1 cup green beans\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs\"]', 610, 45, 65, 15, 15, 320, NULL, NULL),
+('R_694c6b7b3fb1c', 'Smoothie (Dairy-Free, Soy-Free)', '[\"1 cup spinach\",\"1\\/2 banana\",\"1\\/2 cup berries\",\"1 scoop dairy-free\\/soy-free protein powder\",\"1 cup almond milk\"]', 370, 18, 55, 10, 10, 120, NULL, NULL),
+('R_694c6b7b3fdec', 'Chicken Salad (Dairy-Free) on Lettuce Wraps', '[\"4oz cooked chicken\",\"1 tbsp dairy-free mayonnaise\",\"1\\/4 cup chopped celery\",\"lettuce leaves\"]', 540, 35, 45, 8, 25, 420, NULL, NULL),
+('R_694c6b7b4005f', 'Japanese Vegetable Tempura with Brown Rice', '[\"1 cup vegetable tempura (lightly battered)\",\"1\\/2 cup brown rice\",\"tempura dipping sauce (low sodium)\"]', 630, 25, 80, 15, 20, 450, NULL, NULL),
+('R_694c6b7b4027f', 'Rice Porridge (Japanese Style) with Fruit', '[\"1\\/2 cup cooked rice\",\"1 cup water\",\"1\\/2 cup chopped fruit (melon, peach)\"]', 360, 10, 70, 8, 5, 150, NULL, NULL),
+('R_694c6b7b405d0', 'Turkey & Vegetable Roll-Ups', '[\"4oz sliced turkey breast\",\"1\\/4 avocado\",\"spinach leaves\",\"bell pepper strips\",\"whole-wheat tortillas (check for soy)\"]', 550, 40, 40, 10, 20, 400, NULL, NULL),
+('R_694c6b7b40849', 'Chicken and Vegetable Curry (Chinese Style, Dairy-Free)', '[\"4oz chicken breast\",\"1 cup mixed vegetables (broccoli, carrots, peas)\",\"1\\/2 cup brown rice\",\"curry sauce (dairy-free, low sodium)\"]', 620, 35, 75, 15, 20, 480, NULL, NULL),
+('R_694c6b7b40b3d', 'Dairy-Free Yogurt with Berries and Flax Seeds', '[\"1 cup dairy-free yogurt\",\"1\\/2 cup mixed berries\",\"1 tbsp flax seeds\"]', 380, 14, 60, 12, 12, 160, NULL, NULL),
+('R_694c6b7b40fc4', 'Japanese Udon Noodle Soup (Vegetable)', '[\"1 cup udon noodles\",\"2 cups vegetable broth (low sodium)\",\"1\\/2 cup mixed vegetables (carrots, mushrooms, seaweed)\",\"soy sauce alternative (coconut aminos)\"]', 570, 28, 80, 12, 15, 520, NULL, NULL),
+('R_694c6b7b412b6', 'Baked Chicken with Roasted Root Vegetables', '[\"4oz chicken breast\",\"1 cup roasted root vegetables (carrots, parsnips, turnips)\",\"1 tbsp olive oil\",\"herbs\"]', 600, 42, 65, 14, 18, 350, NULL, NULL),
+('R_694c6b7b415b6', 'Dairy-Free Pancakes with Berries', '[\"2 dairy-free pancakes\",\"1\\/2 cup berries\",\"maple syrup (small amount)\"]', 390, 16, 65, 10, 8, 170, NULL, NULL),
+('R_694c6b7b41843', 'Chicken and Rice Soup (Chinese Style)', '[\"1.5 cup chicken and rice soup (low sodium)\",\"ginger, garlic\"]', 560, 38, 65, 10, 15, 460, NULL, NULL),
+('R_694c6b7b41aa7', 'Baked Halibut with Steamed Bok Choy & Brown Rice', '[\"4oz halibut fillet\",\"1 cup steamed bok choy\",\"1\\/2 cup brown rice\",\"lemon juice\",\"herbs\"]', 610, 45, 65, 15, 15, 330, NULL, NULL),
+('R_694c6b925385d', 'Oatmeal with Berries & Seeds (Dairy-Free)', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 cup mixed berries (strawberries, blueberries)\",\"1 tbsp chia seeds\",\"1 tsp maple syrup\",\"cinnamon\"]', 380, 12, 60, 8, 12, 150, NULL, NULL),
+('R_694c6b9253b3a', 'Chicken & Vegetable Stir-Fry (Chinese Style)', '[\"4oz chicken breast (cooked)\",\"1 cup mixed vegetables (broccoli, carrots, bell peppers)\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 550, 35, 65, 7, 18, 450, NULL, NULL),
+('R_694c6b9253ddb', 'Baked Salmon with Roasted Asparagus & Sweet Potato', '[\"4oz salmon fillet\",\"1 cup asparagus\",\"1 medium sweet potato\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs (dill, parsley)\"]', 620, 40, 70, 10, 25, 300, NULL, NULL),
+('R_694c6b92540af', 'Scrambled Eggs with Spinach & Tomato (Dairy-Free)', '[\"2 eggs\",\"1 cup spinach\",\"1\\/2 tomato\",\"1 tbsp olive oil\",\"black pepper\"]', 350, 25, 15, 3, 20, 250, NULL, NULL),
+('R_694c6b925433e', 'Japanese Chicken Donburi (Rice Bowl)', '[\"4oz cooked chicken\",\"1\\/2 cup cooked brown rice\",\"1\\/4 cup shredded carrots\",\"1\\/4 cup sliced mushrooms\",\"2 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"ginger, garlic\"]', 580, 38, 75, 6, 18, 500, NULL, NULL),
+('R_694c6b925456f', 'Lentil Soup with Whole-Wheat Bread', '[\"1.5 cup lentil soup (low sodium)\",\"1 slice whole-wheat bread\"]', 600, 30, 80, 15, 15, 400, NULL, NULL),
+('R_694c6b925477b', 'Dairy-Free Yogurt with Granola & Fruit', '[\"1 cup dairy-free yogurt (coconut or almond)\",\"1\\/4 cup granola (check for peanut\\/soy free)\",\"1\\/2 cup berries\"]', 390, 15, 65, 7, 10, 180, NULL, NULL),
+('R_694c6b9254989', 'Shrimp & Broccoli Stir-Fry (Chinese)', '[\"4oz shrimp\",\"1 cup broccoli florets\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 560, 40, 60, 8, 18, 480, NULL, NULL),
+('R_694c6b9254b90', 'Baked Cod with Quinoa & Green Beans', '[\"4oz cod fillet\",\"1\\/2 cup cooked quinoa\",\"1 cup green beans\",\"1 tbsp olive oil\",\"lemon juice\",\"herbs\"]', 610, 45, 65, 12, 18, 320, NULL, NULL),
+('R_694c6b9254dac', 'Smoothie (Dairy-Free, Soy-Free)', '[\"1 cup spinach\",\"1\\/2 banana\",\"1\\/2 cup berries\",\"1 scoop dairy-free protein powder (pea or rice based)\",\"1 cup almond milk\"]', 370, 18, 55, 10, 10, 100, NULL, NULL),
+('R_694c6b9254fb7', 'Chicken Salad (Dairy-Free) on Lettuce Wraps', '[\"4oz cooked chicken\",\"1 tbsp dairy-free mayonnaise\",\"1\\/4 cup chopped celery\",\"lettuce leaves\"]', 540, 35, 45, 5, 25, 420, NULL, NULL),
+('R_694c6b925523a', 'Japanese Vegetable Tempura with Brown Rice', '[\"1 cup vegetable tempura (lightly battered)\",\"1\\/2 cup brown rice\",\"tempura dipping sauce (low sodium)\"]', 630, 25, 80, 10, 22, 450, NULL, NULL),
+('R_694c6b9255785', 'Rice Porridge with Fruit', '[\"1\\/2 cup cooked rice\",\"1 cup water\",\"1\\/2 cup chopped fruit (peaches, pears)\",\"cinnamon\"]', 360, 8, 70, 5, 5, 120, NULL, NULL),
+('R_694c6b92559de', 'Beef and Broccoli (Chinese)', '[\"4oz lean beef\",\"1 cup broccoli\",\"1 tbsp low-sodium soy sauce alternative (coconut aminos)\",\"1 tsp sesame oil\",\"1\\/2 cup brown rice\"]', 570, 40, 60, 8, 18, 470, NULL, NULL),
+('R_694c6b9255bc7', 'Baked Tilapia with Roasted Brussels Sprouts & Mashed Cauliflower', '[\"4oz tilapia fillet\",\"1 cup brussels sprouts\",\"1 cup mashed cauliflower\",\"1 tbsp olive oil\",\"herbs\"]', 600, 42, 65, 13, 18, 330, NULL, NULL),
+('R_694c6b9255da1', 'Dairy-Free Yogurt with Berries and Flax Seeds', '[\"1 cup dairy-free yogurt\",\"1\\/2 cup mixed berries\",\"1 tbsp flax seeds\"]', 380, 14, 60, 10, 12, 160, NULL, NULL),
+('R_694c6b9255f85', 'Chicken Teriyaki Bowl (Japanese)', '[\"4oz chicken breast\",\"1\\/2 cup brown rice\",\"teriyaki sauce (low sodium, soy-free)\",\"broccoli\"]', 550, 38, 65, 7, 17, 490, NULL, NULL),
+('R_694c6b925617c', 'Turkey Meatloaf with Steamed Carrots and Sweet Potato Mash', '[\"4oz ground turkey\",\"1\\/2 cup carrots\",\"1\\/2 cup sweet potato mash\"]', 620, 40, 70, 11, 18, 350, NULL, NULL),
+('R_694c6b9256364', 'Dairy-Free Oatmeal with Apple and Cinnamon', '[\"1\\/2 cup rolled oats\",\"1 cup water\",\"1\\/2 apple (chopped)\",\"cinnamon\"]', 390, 10, 65, 9, 10, 140, NULL, NULL),
+('R_694c6b925660c', 'Japanese Udon Noodle Soup (Vegetable)', '[\"1 cup udon noodles\",\"vegetable broth (low sodium)\",\"assorted vegetables (carrots, mushrooms, spinach)\"]', 560, 28, 80, 10, 15, 500, NULL, NULL),
+('R_694c6b9256870', 'Baked Halibut with Roasted Root Vegetables', '[\"4oz halibut fillet\",\"1 cup root vegetables (parsnips, carrots)\",\"1 tbsp olive oil\",\"herbs\"]', 610, 45, 65, 12, 18, 340, NULL, NULL),
+('R_694c6b986377e', 'Oatmeal with Berries and Seeds (Dairy-Free)', '[\"1\\/2 cup Rolled Oats\",\"1 cup Water\",\"1\\/4 cup Mixed Berries (strawberries, blueberries, raspberries)\",\"1 tbsp Chia Seeds\",\"1 tbsp Sunflower Seeds\",\"1 tsp Maple Syrup (optional)\",\"Pinch of Cinnamon\"]', 380, 12, 55, 10, 12, 5, NULL, NULL),
+('R_694c6b9863b9c', 'Chicken and Vegetable Stir-Fry with Brown Rice (Chinese-Inspired)', '[\"100g Chicken Breast (skinless, boneless)\",\"1\\/2 cup Brown Rice (cooked)\",\"1\\/2 cup Broccoli Florets\",\"1\\/4 cup Carrots (sliced)\",\"1\\/4 cup Bell Peppers (sliced - any color)\",\"1 tbsp Olive Oil\",\"1 tbsp Low-Sodium Tamari (soy-free)\",\"1 tsp Ginger (grated)\",\"1\\/2 tsp Garlic (minced)\",\"1\\/4 cup Snow Peas\"]', 580, 35, 65, 8, 20, 250, NULL, NULL),
+('R_694c6b986435d', 'Salmon with Steamed Bok Choy and Japanese-Style Rice', '[\"120g Salmon Fillet\",\"1 cup Bok Choy (chopped)\",\"1\\/2 cup Cooked Japanese Rice (short-grain)\",\"1 tbsp Rice Vinegar\",\"1\\/2 tsp Sesame Oil\",\"1\\/4 tsp Ginger (grated)\",\"Pinch of Black Pepper\",\"Lemon Wedge (optional)\"]', 490, 38, 45, 6, 18, 150, NULL, NULL),
+('R_694c6b9fa74fe', 'Oatmeal with Berries and Seeds (Dairy-Free)', '[\"1\\/2 cup Rolled Oats\",\"1 cup Water\",\"1\\/4 cup Mixed Berries (strawberries, blueberries, raspberries)\",\"1 tbsp Chia Seeds\",\"1 tbsp Pumpkin Seeds\",\"1 tsp Maple Syrup (optional)\",\"Pinch of Cinnamon\"]', 380, 12, 55, 10, 12, 5, NULL, NULL),
+('R_694c6b9fa7776', 'Chicken and Vegetable Stir-Fry with Brown Rice (Chinese-Inspired)', '[\"100g Chicken Breast (skinless, boneless)\",\"1\\/2 cup Brown Rice (cooked)\",\"1\\/2 cup Broccoli Florets\",\"1\\/4 cup Carrots (sliced)\",\"1\\/4 cup Bell Peppers (sliced - any color)\",\"1 tbsp Olive Oil\",\"1 tbsp Low-Sodium Tamari (soy-free)\",\"1 tsp Ginger (grated)\",\"1\\/2 tsp Garlic (minced)\",\"1\\/4 cup Snow Peas\"]', 580, 35, 65, 8, 20, 250, NULL, NULL),
+('R_694c6b9fa79de', 'Salmon with Steamed Bok Choy and Sweet Potato (Japanese-Inspired)', '[\"120g Salmon Fillet\",\"1 cup Bok Choy (chopped)\",\"1\\/2 cup Sweet Potato (cubed)\",\"1 tbsp Olive Oil\",\"1 tbsp Lemon Juice\",\"1\\/2 tsp Sesame Oil\",\"Pinch of Black Pepper\",\"1\\/4 tsp Seaweed Flakes (optional)\"]', 490, 32, 45, 7, 20, 150, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reminders`
+--
+
+CREATE TABLE `reminders` (
+  `reminderID` int(11) NOT NULL,
+  `senderID` varchar(50) NOT NULL,
+  `receiverID` varchar(50) NOT NULL,
+  `message` text NOT NULL,
+  `isRead` tinyint(1) DEFAULT 0,
+  `createdAt` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reminders`
+--
+
+INSERT INTO `reminders` (`reminderID`, `senderID`, `receiverID`, `message`, `isRead`, `createdAt`) VALUES
+(1, 'U_694c2c9f9052b', 'U_6943abac29ea8', 'DRINK MOREEE WATEERRRR', 1, '2025-12-25 02:52:11');
 
 -- --------------------------------------------------------
 
@@ -852,16 +1201,6 @@ CREATE TABLE `shopping_items` (
   `item` varchar(255) NOT NULL,
   `createdAt` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `shopping_items`
---
-
-INSERT INTO `shopping_items` (`itemID`, `userID`, `item`, `createdAt`) VALUES
-('S_6946b5ff355d3', 'U_6943abac29ea8', '4oz steamed cod', '2025-12-20 22:43:11'),
-('S_6946b5ff897e0', 'U_6943abac29ea8', '1 tbsp grated ginger', '2025-12-20 22:43:11'),
-('S_6946b5ffe5589', 'U_6943abac29ea8', '1 cup bok choy', '2025-12-20 22:43:11'),
-('S_6946b6002a79b', 'U_6943abac29ea8', '1 tbsp light soy sauce', '2025-12-20 22:43:12');
 
 -- --------------------------------------------------------
 
@@ -891,7 +1230,34 @@ INSERT INTO `users` (`userID`, `name`, `username`, `password`, `email`, `phoneNo
 ('U_6945662a244b0', 'dietitian', 'dietitian', '$2y$12$zZZbXMmE7OsfnspmyuhKBehpy6qSpPxUcFayqhgd/tirOLgBsWYqe', 'diet@gmail.com', '123123123', 12, 'Male', 'Dietitian'),
 ('U_694693812f6a3', 'Dr. Alice', 'alice_diet', '$2y$12$x6Uq.BtTqJwpAeBT7y4ex.XsGqWxvrVd9/BQo0DXvjq2RrhBYq3me', 'alice@example.com', '', 0, 'Male', 'Dietitian'),
 ('U_694693812ff86', 'Dr. Bob', 'bob_diet', '$2y$12$82Rl/bA3EDn6HGK1eLWi0.Shng8Nk9HEYgJrNzcrm7aetjynEezti', 'bob@example.com', '', 0, 'Male', 'Dietitian'),
-('U_6946e59b595dc', 'user1', 'user1', '$2y$12$AbMeV4MwjE9wzmck9sifdeqFA7r6s/zu/vXmen5DpHbUC.AE/3v/6', 'user@gmail.com', '012123123', 50, 'Male', 'User');
+('U_6946e59b595dc', 'user1', 'user1', '$2y$12$AbMeV4MwjE9wzmck9sifdeqFA7r6s/zu/vXmen5DpHbUC.AE/3v/6', 'user@gmail.com', '012123123', 50, 'Male', 'User'),
+('U_694c2219a7a17', 'Test User', 'user_test_123', '$2y$12$I0B6hwZnYUBUbHG64s5.9eiFQyrpU3tlNxxutyLT1oTxpJC9G3opG', 'test123@example.com', '1234567890', 70, 'Other', 'User'),
+('U_694c2c9d7f859', 'care_recip', 'care_recip', '$2y$12$qnpIg9WFq6xYvWCuYsPzresxn7BSbKfaTKk807dFydtNsRtFWh/pu', 'c_recip@test.com', '1234567890', 40, 'Male', 'Caretaker'),
+('U_694c2c9f9052b', 'Caretaker1', 'Caretaker', '$2y$12$ghZiNT6VRkr685AEsl7oLeIjSvonjua5LxKjPwo393pLfQrUO5rm.', 'caretaker@gmail.com', '0137383223', 18, 'Male', 'Caretaker'),
+('U_694c2d782ecc8', 'user2', 'user2', '$2y$12$arRopBVxjUmPZPlLYU0M3uQzkd1wmgr55ghiKMIfG9sTL/7ZGNhuq', 'user2@gmail.com', '0121231231', 69, 'Male', 'User'),
+('U_694c2f23a0f30', 'care_fix', 'care_fix', '$2y$12$ng1wgA4LENVd0IYq6Bwl7.uZwyPNonLfWDK4dItqMQirFB37lzQmS', 'care_fix@test.com', '1111111111', 40, 'Male', 'Caretaker'),
+('U_694c2f939ab92', 'pat_fix', 'pat_fix', '$2y$12$EqK0t7Y7OOb5VKjIpXB3B.BL6Fwp7Pp8OxbfzOSu7J7sQFU0GfghC', 'pat_fix@test.com', '2222222222', 70, 'Male', 'User'),
+('U_694c6afb880bc', 'user3', 'user3', '$2y$12$G35GlgMI.BwumrhXMkL8LOizCi03X3/Fp6jXMN7PV2EOF63ZJXKp2', 'user3@gmail.com', '012123123', 25, 'Male', 'User');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_links`
+--
+
+CREATE TABLE `user_links` (
+  `linkID` int(11) NOT NULL,
+  `caretakerID` varchar(50) NOT NULL,
+  `patientID` varchar(50) NOT NULL,
+  `createdAt` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_links`
+--
+
+INSERT INTO `user_links` (`linkID`, `caretakerID`, `patientID`, `createdAt`) VALUES
+(2, 'U_694c2c9f9052b', 'U_6943abac29ea8', '2025-12-25 02:51:36');
 
 --
 -- Indexes for dumped tables
@@ -953,6 +1319,15 @@ ALTER TABLE `food_logs`
   ADD KEY `elderlyID` (`elderlyID`);
 
 --
+-- Indexes for table `link_requests`
+--
+ALTER TABLE `link_requests`
+  ADD PRIMARY KEY (`requestID`),
+  ADD UNIQUE KEY `unique_request` (`initiatorID`,`targetID`),
+  ADD KEY `initiatorID` (`initiatorID`),
+  ADD KEY `targetID` (`targetID`);
+
+--
 -- Indexes for table `meals`
 --
 ALTER TABLE `meals`
@@ -987,6 +1362,14 @@ ALTER TABLE `recipes`
   ADD PRIMARY KEY (`recipeID`);
 
 --
+-- Indexes for table `reminders`
+--
+ALTER TABLE `reminders`
+  ADD PRIMARY KEY (`reminderID`),
+  ADD KEY `senderID` (`senderID`),
+  ADD KEY `receiverID` (`receiverID`);
+
+--
 -- Indexes for table `shopping_items`
 --
 ALTER TABLE `shopping_items`
@@ -1000,6 +1383,36 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`userID`),
   ADD UNIQUE KEY `username` (`username`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `user_links`
+--
+ALTER TABLE `user_links`
+  ADD PRIMARY KEY (`linkID`),
+  ADD KEY `caretakerID` (`caretakerID`),
+  ADD KEY `patientID` (`patientID`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `link_requests`
+--
+ALTER TABLE `link_requests`
+  MODIFY `requestID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `reminders`
+--
+ALTER TABLE `reminders`
+  MODIFY `reminderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `user_links`
+--
+ALTER TABLE `user_links`
+  MODIFY `linkID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
@@ -1057,6 +1470,13 @@ ALTER TABLE `food_logs`
   ADD CONSTRAINT `food_logs_ibfk_1` FOREIGN KEY (`elderlyID`) REFERENCES `elderly` (`elderlyID`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `link_requests`
+--
+ALTER TABLE `link_requests`
+  ADD CONSTRAINT `link_requests_ibfk_1` FOREIGN KEY (`initiatorID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  ADD CONSTRAINT `link_requests_ibfk_2` FOREIGN KEY (`targetID`) REFERENCES `users` (`userID`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `meals`
 --
 ALTER TABLE `meals`
@@ -1076,10 +1496,24 @@ ALTER TABLE `progress`
   ADD CONSTRAINT `progress_ibfk_2` FOREIGN KEY (`dietPlanID`) REFERENCES `diet_plans` (`dietPlanID`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `reminders`
+--
+ALTER TABLE `reminders`
+  ADD CONSTRAINT `reminders_ibfk_1` FOREIGN KEY (`senderID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  ADD CONSTRAINT `reminders_ibfk_2` FOREIGN KEY (`receiverID`) REFERENCES `users` (`userID`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `shopping_items`
 --
 ALTER TABLE `shopping_items`
   ADD CONSTRAINT `shopping_items_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_links`
+--
+ALTER TABLE `user_links`
+  ADD CONSTRAINT `user_links_ibfk_1` FOREIGN KEY (`caretakerID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_links_ibfk_2` FOREIGN KEY (`patientID`) REFERENCES `users` (`userID`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

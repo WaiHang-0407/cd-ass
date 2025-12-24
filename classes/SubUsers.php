@@ -86,7 +86,7 @@ class Admin extends User
     }
 }
 
-class Caretaker extends User
+class Caretaker extends Elderly
 {
     public $relationship;
     public $emergencyContact;
@@ -107,12 +107,43 @@ class Caretaker extends User
 
     public function save()
     {
+        // 1. Save to Users and Elderly tables (via Parent)
+        // This ensures they have a Profile and Diet Plan capability
         if (parent::save()) {
-            $stmt = $this->pdo->prepare("INSERT INTO caretakers (caretakerID, relationship, emergencyContact) VALUES (?, ?, ?)");
-            $stmt->execute([$this->userID, $this->relationship, $this->emergencyContact]);
+            // 2. Save/Update Caretakers specific info
+            // Check if exists first to decide Insert/Update (or use REPLACE INTO if SQLite/MySQL allows)
+            // For now simple INSERT IGNORE or Check
+            $check = $this->pdo->prepare("SELECT caretakerID FROM caretakers WHERE caretakerID = ?");
+            $check->execute([$this->userID]);
+            if ($check->rowCount() == 0) {
+                $stmt = $this->pdo->prepare("INSERT INTO caretakers (caretakerID, relationship, emergencyContact) VALUES (?, ?, ?)");
+                $stmt->execute([$this->userID, $this->relationship ?? '', $this->emergencyContact ?? '']);
+            }
             return true;
         }
         return false;
+    }
+
+    public function linkPatient($patientID)
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO user_links (caretakerID, patientID) VALUES (?, ?)");
+        try {
+            return $stmt->execute([$this->userID, $patientID]);
+        } catch (Exception $e) {
+            return false; // Likely duplicate or constraint
+        }
+    }
+
+    public function getLinkedPatients()
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT u.* 
+            FROM user_links ul
+            JOIN users u ON ul.patientID = u.userID
+            WHERE ul.caretakerID = ?
+        ");
+        $stmt->execute([$this->userID]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 }
 ?>

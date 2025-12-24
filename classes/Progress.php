@@ -111,11 +111,72 @@ class Progress
                 $sodium
             ]);
         } catch (Exception $e) {
-            // Silently fail logging if error, don't stop main progress update
+            // Silently fail logging if error
         }
 
         $this->evaluateState();
         $this->save();
+        $this->checkAlerts();
+    }
+
+    private function checkAlerts()
+    {
+        // Check Today
+        $isHealthConcern = ($this->state instanceof RedState || $this->state instanceof YellowState);
+        if (!$isHealthConcern)
+            return;
+
+        // Check Previous 2 Days
+        $d1 = date('Y-m-d', strtotime('-1 day'));
+        $d2 = date('Y-m-d', strtotime('-2 days'));
+
+        $stmt = $this->pdo->prepare("SELECT state FROM progress WHERE elderlyID = ? AND date IN (?, ?)");
+        $stmt->execute([$this->elderlyID, $d1, $d2]);
+        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Strict: Need 2 past days of records
+        if (count($rows) < 2)
+            return;
+
+        foreach ($rows as $s) {
+            if ($s === 'Green')
+                return; // Streak broken
+        }
+
+        // 3 Days Consecutive Concern Found!
+        // Prevent Duplicate Alerts Today
+        $alertTag = "[System Alert] Dietary Warning";
+        // Check if we sent this to the User today
+        $chk = $this->pdo->prepare("SELECT 1 FROM messages WHERE receiverID = ? AND message LIKE ? AND DATE(sentAt) = ?");
+        $chk->execute([$this->elderlyID, "$alertTag%", $this->date]);
+        if ($chk->fetchColumn())
+            return; // Already sent
+
+        // Fetch Recipients & Send
+        require_once __DIR__ . '/Message.php';
+        $msgSystem = new Message($this->pdo);
+
+        // 1. User (Self)
+        $msgSystem->send($this->elderlyID, $this->elderlyID, "$alertTag: You have missed your dietary targets for 3 days in a row. Please review your goals.");
+
+        // Fetch Patient Name & Dietitian
+        $stmtD = $this->pdo->prepare("SELECT e.assignedDietitianID, u.name FROM elderly e JOIN users u ON e.elderlyID = u.userID WHERE e.elderlyID = ?");
+        $stmtD->execute([$this->elderlyID]);
+        $pInfo = $stmtD->fetch();
+        $pName = $pInfo['name'] ?? 'Patient';
+
+        // 2. Dietitian
+        if (!empty($pInfo['assignedDietitianID'])) {
+            $msgSystem->send($this->elderlyID, $pInfo['assignedDietitianID'], "$alertTag: Patient $pName has been off-track for 3 consecutive days.");
+        }
+
+        // 3. Caretaker
+        $stmtC = $this->pdo->prepare("SELECT caretakerID FROM user_links WHERE patientID = ?");
+        $stmtC->execute([$this->elderlyID]);
+        $caretakerID = $stmtC->fetchColumn();
+        if ($caretakerID) {
+            $msgSystem->send($this->elderlyID, $caretakerID, "$alertTag: Patient $pName has been off-track for 3 consecutive days.");
+        }
     }
 
     private function evaluateState()
@@ -222,6 +283,30 @@ class Progress
             }
         }
         return $streak;
+    }
+
+    public function getReasons()
+    {
+        require_once __DIR__ . '/Profile.php';
+        $profile = new Profile($this->pdo, $this->elderlyID);
+        $reasons = [];
+
+        $calLimit = ($profile->caloriesLimit > 0) ? $profile->caloriesLimit : 2000;
+        $sodLimit = ($profile->sodiumLimit > 0) ? $profile->sodiumLimit : 2300;
+        $sugarLimit = ($profile->sugarLimit > 0) ? $profile->sugarLimit : 50;
+
+        $calRatio = ($calLimit > 0) ? $this->caloriesTaken / $calLimit : 0;
+
+        if ($calRatio > 1.1)
+            $reasons[] = "Calories are high (" . round($calRatio * 100) . "%).";
+        if ($this->sodiumTaken > $sodLimit)
+            $reasons[] = "Sodium limit exceeded.";
+        if ($this->sugarTaken > $sugarLimit)
+            $reasons[] = "Sugar intake is high.";
+        if ($this->waterIntake < 1.0)
+            $reasons[] = "Water intake is low.";
+
+        return $reasons;
     }
 }
 ?>

@@ -10,7 +10,7 @@ interface UserStrategy
 class User implements UserStrategy
 {
     protected $pdo;
-    protected $userID;
+    public $userID;
     public $name;
     public $username;
     protected $password; // Hash

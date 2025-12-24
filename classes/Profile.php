@@ -85,24 +85,49 @@ class Profile
         // Default Limits
         $this->sugarLimit = 30; // recommended max added sugar
         $this->sodiumLimit = 2300; // standard limit
-        $this->fibreRequirement = 25;
+        $this->fibreRequirement = 25; // standard
 
         // 4. Adjust based on Health Conditions (Case-insensitive check)
         $conditions = array_map('strtolower', $this->healthCondition);
 
+        // -- Diabetes --
         if (in_array('diabetes', $conditions)) {
-            $this->sugarLimit = 20;
-            $this->carbsLimit = round(($tdee * 0.45) / 4); // Reduce carbs slightly
+            $this->sugarLimit = 20; // Stricter sugar limit
+            $this->carbsLimit = round(($tdee * 0.45) / 4); // Reduces carbs to 45%
+            $this->fibreRequirement = 30; // Higher fibre recommended
         }
 
-        if (in_array('hypertension', $conditions) || in_array('high blood pressure', $conditions)) {
-            $this->sodiumLimit = 1500;
+        // -- Hypertension / Heart Disease / Kidney Disease --
+        // All benefit from lower sodium
+        if (
+            in_array('hypertension (high blood pressure)', $conditions) ||
+            in_array('heart disease', $conditions) ||
+            in_array('kidney disease', $conditions)
+        ) {
+            $this->sodiumLimit = 1500; // Low sodium diet
         }
 
+        // -- High Cholesterol --
         if (in_array('high cholesterol', $conditions)) {
-            // Logic would be less sat fat, here we might adjust total calories slightly down
+            $this->fibreRequirement = 30; // High fibre helps lower cholesterol
+            // Logic: Less Saturated fat usually means slightly less calories from fat
             $this->caloriesLimit = round($tdee * 0.95);
         }
+
+        // -- Combined: Diabetes AND High Cholesterol --
+        // If both are present, boost fibre further
+        if (in_array('diabetes', $conditions) && in_array('high cholesterol', $conditions)) {
+            $this->fibreRequirement = 35;
+        }
+
+        // -- Osteoporosis --
+        // Focus is calcium (not tracked), but ensure sufficient calories/protein
+        // No specific limit change for the fields we have, keep defaults.
+
+        // -- Weight Management (Implicit) --
+        // If BMI is high (>30), slightly deficit calories could be suggested, 
+        // but for elderly we are cautious about restriction without professional oversight.
+        // We will stick to TDEE (Maintenance) logic for now unless explicitly dieting.
     }
 
     public function save()

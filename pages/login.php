@@ -1,9 +1,9 @@
 <?php
 // pages/index.php (Login)
 session_start();
-require_once '../includes/db.php';
-require_once '../classes/SubUsers.php';
-require_once '../classes/Profile.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../classes/SubUsers.php';
+require_once __DIR__ . '/../classes/Profile.php';
 
 $error = '';
 

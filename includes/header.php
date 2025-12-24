@@ -28,6 +28,9 @@
                             <a class="nav-link text-white" href="../pages/dashboard.php">Dashboard</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link text-white" href="../pages/settings.php">Settings</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link text-white" href="../pages/logout.php">Logout</a>
                         </li>
                     <?php else: ?>
