@@ -4,16 +4,37 @@ require_once '../includes/auth.php';
 require_once '../includes/db.php';
 require_once '../classes/Profile.php';
 
-requireRole(['User', 'Elderly']); // Only elderly users can edit their own profile for now
+requireRole(['User', 'Elderly', 'Dietitian']);
 
-$user = getCurrentUser();
-$profile = new Profile($pdo, $user->userID);
+$currentUser = getCurrentUser();
+$targetUserID = $currentUser->userID;
+$isDietitian = ($currentUser->role === 'Dietitian');
+
+// Dietitian Mode: Check for ID parameter
+if ($isDietitian) {
+    if (!isset($_GET['id'])) {
+        header("Location: my-patients.php");
+        exit;
+    }
+    $targetUserID = $_GET['id'];
+
+    // Validate Assignment
+    $check = $pdo->prepare("SELECT count(*) FROM elderly WHERE elderlyID = ? AND assignedDietitianID = ?");
+    $check->execute([$targetUserID, $currentUser->userID]);
+    if ($check->fetchColumn() == 0) {
+        die("Unauthorized access to this patient profile.");
+    }
+}
+
+// Load Target Profile
+$profile = new Profile($pdo, $targetUserID);
 $msg = '';
 
-// Fetch User Data global for both POST and GET logic
-$stmtUser = $pdo->prepare("SELECT age, gender FROM users WHERE userID = ?");
-$stmtUser->execute([$user->userID]);
+// Fetch User Data for Target
+$stmtUser = $pdo->prepare("SELECT age, gender, name FROM users WHERE userID = ?");
+$stmtUser->execute([$targetUserID]);
 $userData = $stmtUser->fetch();
+$targetName = $userData['name'] ?? 'User';
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -31,7 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Arrays
     $profile->allergies = $_POST['allergies'] ?? [];
     $profile->healthCondition = $_POST['healthCondition'] ?? [];
-    $profile->medicationList = array_map('trim', explode(',', $_POST['medicationList'] ?? ''));
+    // $profile->medicationList = array_map('trim', explode(',', $_POST['medicationList'] ?? '')); // Old logic removed
+
+    // Handle Detailed Medications
+    $profile->clearMedications();
+    if (isset($_POST['med_name']) && is_array($_POST['med_name'])) {
+        $names = $_POST['med_name'];
+        $dosages = $_POST['med_dosage'];
+        $freqs = $_POST['med_freq'];
+
+        for ($i = 0; $i < count($names); $i++) {
+            if (!empty(trim($names[$i]))) {
+                $d = trim($dosages[$i] ?? ''); // Allow string
+                $f = (int) ($freqs[$i] ?? 1);
+                if (!empty($d)) {
+                    $profile->addMedicationDetailed(trim($names[$i]), $d, $f);
+                }
+            }
+        }
+    }
 
     // AUTO-CALCULATION LOGIC
     // 1. Fetch Age and Gender from Users table (already done above)
@@ -163,8 +202,14 @@ include '../includes/header.php';
 
 <div class="row">
     <div class="col-md-12">
-        <h2>Health Profile</h2>
-        <p class="text-muted">Update your health metrics to get better diet recommendations.</p>
+        <?php if ($isDietitian): ?>
+            <a href="my-patients.php" class="btn btn-outline-secondary mb-3">&larr; Back to Patient List</a>
+            <h2>Health Profile: <span class="text-primary"><?= htmlspecialchars($targetName) ?></span></h2>
+            <p class="text-muted">Viewing and editing patient health metrics.</p>
+        <?php else: ?>
+            <h2>Health Profile</h2>
+            <p class="text-muted">Update your health metrics to get better diet recommendations.</p>
+        <?php endif; ?>
         <?= $msg ?>
     </div>
 </div>
@@ -235,9 +280,74 @@ include '../includes/header.php';
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label>Medications (comma separated)</label>
-                        <textarea name="medicationList"
-                            class="form-control"><?= implode(', ', $profile->medicationList) ?></textarea>
+                        <label>Medications</label>
+                        <table class="table table-sm table-bordered" id="medTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Dosage (Pills/ml)</th>
+                                    <th>Freq/Day</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="medTableBody">
+                                <?php
+                                $meds = $profile->getMedications();
+                                if (empty($meds)) {
+                                    // Add one empty row for UI guidance
+                                    // $meds[] = ['name' => '', 'dosage' => 1, 'frequency' => 1];
+                                }
+                                foreach ($meds as $med):
+                                    ?>
+                                    <tr class="med-row">
+                                        <td><input type="text" name="med_name[]" class="form-control form-control-sm"
+                                                value="<?= htmlspecialchars($med['name']) ?>" placeholder="Med Name"
+                                                required></td>
+                                        <td><input type="text" name="med_dosage[]" class="form-control form-control-sm"
+                                                value="<?= htmlspecialchars($med['dosage']) ?>" placeholder="1 or 5ml"></td>
+                                        <td>
+                                            <select name="med_freq[]" class="form-select form-select-sm">
+                                                <?php for ($k = 1; $k <= 4; $k++): ?>
+                                                    <option value="<?= $k ?>" <?= $med['frequency'] == $k ? 'selected' : '' ?>>
+                                                        <?= $k ?>x
+                                                    </option>
+                                                <?php endfor; ?>
+                                            </select>
+                                        </td>
+                                        <td><button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="removeMedRow(this)">X</button></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addMedRow()">+ Add
+                            Medication</button>
+
+                        <script>
+                            function addMedRow() {
+                                const tbody = document.getElementById('medTableBody');
+                                const tr = document.createElement('tr');
+                                tr.className = 'med-row';
+                                tr.innerHTML = `
+                                    <td><input type="text" name="med_name[]" class="form-control form-control-sm" placeholder="Med Name" required></td>
+                                    <td><input type="text" name="med_dosage[]" class="form-control form-control-sm" placeholder="1 or 5ml"></td>
+                                    <td>
+                                        <select name="med_freq[]" class="form-select form-select-sm">
+                                            <option value="1">1x</option>
+                                            <option value="2">2x</option>
+                                            <option value="3">3x</option>
+                                            <option value="4">4x</option>
+                                        </select>
+                                    </td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMedRow(this)">X</button></td>
+                                `;
+                                tbody.appendChild(tr);
+                            }
+
+                            function removeMedRow(btn) {
+                                btn.closest('tr').remove();
+                            }
+                        </script>
                     </div>
                 </div>
             </div>

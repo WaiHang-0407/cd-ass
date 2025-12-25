@@ -14,25 +14,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = User::findByUsername($pdo, $identifier);
 
     if ($user && $user->login($password)) {
-        $_SESSION['user_id'] = $user->getUserID();
-        $_SESSION['role'] = $user->getRole();
-        $_SESSION['name'] = $user->getName();
+        if (!$user->getIsActive()) {
+            $error = "Account is deactivated. Please contact support.";
+        } else {
+            $_SESSION['user_id'] = $user->getUserID();
+            $_SESSION['role'] = $user->getRole();
+            $_SESSION['name'] = $user->getName();
 
-        // Redirect Logic based on Testing File Flow
-        if ($user->getRole() == 'User' || $user->getRole() == 'Elderly') {
-            // Check if profile is set up
-            $profile = new Profile($pdo, $user->getUserID());
-            // Assuming empty height/weight means not set up
-            if (empty($profile->height) || empty($profile->weight)) {
-                header("Location: profile.php?setup=1");
+            // Redirect Logic based on Testing File Flow
+            if ($user->getRole() == 'User' || $user->getRole() == 'Elderly') {
+                // Check if profile is set up
+                $profile = new Profile($pdo, $user->getUserID());
+                // Assuming empty height/weight means not set up
+                if (empty($profile->height) || empty($profile->weight)) {
+                    header("Location: profile.php?setup=1");
+                } else {
+                    header("Location: dashboard.php");
+                }
+            } elseif ($user->getRole() == 'Admin') {
+                header("Location: admin/dashboard.php");
             } else {
+                // Dietitian, Caretaker -> Dashboard
                 header("Location: dashboard.php");
             }
-        } else {
-            // Admin, Dietitian, Caretaker -> Dashboard
-            header("Location: dashboard.php");
+            exit();
         }
-        exit();
     } else {
         $error = "Invalid credentials.";
     }

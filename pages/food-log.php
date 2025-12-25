@@ -1,16 +1,78 @@
 <?php
 // pages/food-log.php
 require_once '../includes/auth.php';
-require_once '../includes/config.php'; // Fix Undefined Constant AI_MODEL
+require_once '../includes/config.php';
 require_once '../includes/db.php';
 require_once '../classes/Progress.php';
+require_once '../classes/SubUsers.php'; // Required for permission checks
 
-requireRole(['User', 'Elderly']);
-$user = getCurrentUser();
-$progress = new Progress($pdo, $user->userID);
+requireLogin(); // Allow any logged in user, logic below handles specific permissions
+
+$loggedInUser = getCurrentUser();
+$targetUser = $loggedInUser;
+$user = $targetUser; // Alias for compatibility with existing code below
+$isViewer = false;
+
+// Handle ?view_user=ID
+if (isset($_GET['view_user']) && $_GET['view_user'] != $loggedInUser->userID) {
+    $requestedID = $_GET['view_user'];
+
+    // Permission Check
+    $canView = false;
+
+    if ($loggedInUser->role == 'Admin') {
+        $canView = true;
+    } elseif ($loggedInUser->role == 'Caretaker' || $loggedInUser->role == 'User') {
+        // Check Linked Patients
+        $caretaker = new Caretaker($pdo, (array) $loggedInUser);
+        $patients = $caretaker->getLinkedPatients();
+        foreach ($patients as $p) {
+            if ($p->userID == $requestedID) {
+                $canView = true;
+                break;
+            }
+        }
+    } elseif ($loggedInUser->role == 'Dietitian') {
+        // Check Assignment
+        $stmt = $pdo->prepare("SELECT elderlyID FROM elderly WHERE elderlyID = ? AND assignedDietitianID = ?");
+        $stmt->execute([$requestedID, $loggedInUser->userID]);
+        if ($stmt->fetch()) {
+            $canView = true;
+        }
+    }
+
+    if ($canView) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE userID = ?");
+        $stmt->execute([$requestedID]);
+        $targetUserObj = $stmt->fetchObject();
+        if ($targetUserObj) {
+            $targetUser = $targetUserObj;
+            $user = $targetUser; // Sync for queries below
+            $isViewer = true;
+            // Ensure target has 'role' property if fetching as object from DB
+// (PDO fetchObject returns stdClass, User class structure might differ slightly but IDs match)
+        }
+    } else {
+        echo "<div class='alert alert-danger m-3'>You do not have permission to view this user.</div>";
+        require '../includes/footer.php';
+        exit;
+    }
+} else {
+    // Default Access: Only User/Elderly can view their own, or Caretaker viewing themselves (weird but okay)
+// If I am a Dietitian viewing myself, this page isn't really for me unless I am also an Elderly?
+// Ideally restricts, but let's allow "My Profile" view for now or restrict.
+    if (!in_array($loggedInUser->role, ['User', 'Elderly']) && !isset($_GET['view_user'])) {
+        // If Dietitian/Caretaker goes here without param, maybe redirect or show empty?
+// For now, let it load but it might look empty if they have no Progress.
+    }
+}
+
+// Load Progress for Target
+$progress = new Progress($pdo, $targetUser->userID);
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     if (isset($_POST['log_food'])) {
         $foodName = trim($_POST['food_name'] ?? 'Logged Item');
         $cals = (float) $_POST['calories'];
@@ -22,18 +84,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Pass 0 for water in food log
         $progress->addIntake($cals, $protein, 0, $fibre, $carbs, $sodium, $sugar, $foodName);
-        $msg = "<div class='alert alert-success'>Food Logged!</div>";
+        $msg = "<div class='alert alert-success'>Food Logged for " . htmlspecialchars($targetUser->name) . "!</div>";
     } elseif (isset($_POST['log_water'])) {
         $water = (float) $_POST['water_log'];
         $progress->addIntake(0, 0, $water, 0, 0, 0, 0, 'Water Intake');
-        $msg = "<div class='alert alert-success'>Water Logged!</div>";
+        $msg = "<div class='alert alert-success'>Water Logged for " . htmlspecialchars($targetUser->name) . "!</div>";
     }
 }
 
 include '../includes/header.php';
 ?>
 
+<?php if ($isViewer): ?>
+    <div class="alert alert-info border-info shadow-sm">
+        <i class="bi bi-eye-fill me-2"></i>
+        Viewing Food Log for <strong><?= htmlspecialchars($targetUser->name) ?></strong>
+        <a href="dashboard.php" class="float-end text-decoration-none small">Return to Dashboard</a>
+    </div>
+<?php endif; ?>
+
 <div class="row">
+    <!-- DEBUG: LEFT COLUMN STARTS -->
     <div class="col-md-6">
         <h2>Daily Food & Water Log</h2>
         <p>Date: <?= date('Y-m-d') ?></p>
@@ -93,10 +164,10 @@ include '../includes/header.php';
             <div class="card-footer bg-white small">
                 <h6 class="mb-2 fw-bold text-muted">Status Rules:</h6>
                 <ul class="list-unstyled mb-0">
-                    <li><i class="bi bi-circle-fill text-success"></i> <strong>Green:</strong> On track (Within limits &
-                        Hydrated).</li>
-                    <li><i class="bi bi-circle-fill text-warning"></i> <strong>Yellow:</strong> Calories >110%, High
-                        Sodium/Sugar, or Low Water.</li>
+                    <li><i class="bi bi-circle-fill text-success"></i> <strong>Green:</strong> On track (Calories >60% &
+                        Within limits).</li>
+                    <li><i class="bi bi-circle-fill text-warning"></i> <strong>Yellow:</strong> Calories <60% or>110%,
+                            High Sodium/Sugar.</li>
                     <li><i class="bi bi-circle-fill text-danger"></i> <strong>Red:</strong> Calories >125% or Sodium
                         >120%.</li>
                 </ul>
@@ -223,179 +294,188 @@ include '../includes/header.php';
 
         <?= $autoMsg ?>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-3" id="logTabs" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active" id="food-tab" data-bs-toggle="tab" data-bs-target="#food" type="button"
-                    role="tab">Food Log</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" id="water-tab" data-bs-toggle="tab" data-bs-target="#water" type="button"
-                    role="tab">Water Log</button>
-            </li>
-        </ul>
+        <?php if ($isViewer): ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                You are viewing <strong><?= htmlspecialchars($targetUser->name) ?></strong>'s food log in read-only mode.
+                They can log their own food intake when they sign in.
+            </div>
+        <?php else: ?>
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="logTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="food-tab" data-bs-toggle="tab" data-bs-target="#food" type="button"
+                        role="tab">Food Log</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="water-tab" data-bs-toggle="tab" data-bs-target="#water" type="button"
+                        role="tab">Water Log</button>
+                </li>
+            </ul>
 
-        <div class="tab-content" id="logTabsContent">
-            <!-- Food Tab -->
-            <div class="tab-pane fade show active" id="food" role="tabpanel">
-                <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm" id="foodLogForm">
-                    <h4 class="mb-3">Add Food Entry</h4>
+            <div class="tab-content" id="logTabsContent">
+                <!-- Food Tab -->
+                <div class="tab-pane fade show active" id="food" role="tabpanel">
+                    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm" id="foodLogForm">
+                        <h4 class="mb-3">Add Food Entry</h4>
 
-                    <!-- Snap & Log Section -->
-                    <div class="mb-3 border p-2 rounded bg-light">
-                        <label class="form-label fw-bold"><i class="bi bi-camera-fill"></i> Snap & Log (AI)</label>
-                        <div class="input-group">
-                            <input type="file" name="food_image" id="food_image" class="form-control" accept="image/*"
-                                capture="environment">
-                            <input type="hidden" name="compressed_image" id="compressed_image">
-                            <button type="button" onclick="handleAnalyze()"
-                                class="btn btn-outline-primary">Analyze</button>
-                            <button type="submit" name="analyze" id="btn_analyze_submit" style="display:none;"
-                                formnovalidate></button>
+                        <!-- Snap & Log Section -->
+                        <div class="mb-3 border p-2 rounded bg-light">
+                            <label class="form-label fw-bold"><i class="bi bi-camera-fill"></i> Snap & Log (AI)</label>
+                            <div class="input-group">
+                                <input type="file" name="food_image" id="food_image" class="form-control" accept="image/*"
+                                    capture="environment">
+                                <input type="hidden" name="compressed_image" id="compressed_image">
+                                <button type="button" onclick="handleAnalyze()"
+                                    class="btn btn-outline-primary">Analyze</button>
+                                <button type="submit" name="analyze" id="btn_analyze_submit" style="display:none;"
+                                    formnovalidate></button>
+                            </div>
+                            <small class="text-muted" id="compression_status">Upload a photo to auto-fill calories.</small>
                         </div>
-                        <small class="text-muted" id="compression_status">Upload a photo to auto-fill calories.</small>
-                    </div>
-                    <script>
-                        // Client-side Compression Script
-                        const fileInput = document.getElementById('food_image');
-                        const compressedInput = document.getElementById('compressed_image');
-                        const statusText = document.getElementById('compression_status');
+                        <script>
+                            // Client-side Compression Script
+                            const fileInput = document.getElementById('food_image');
+                            const compressedInput = document.getElementById('compressed_image');
+                            const statusText = document.getElementById('compression_status');
 
-                        if (fileInput) {
-                            fileInput.addEventListener('change', function (e) {
-                                if (fileInput.files.length === 0) return;
+                            if (fileInput) {
+                                fileInput.addEventListener('change', function (e) {
+                                    if (fileInput.files.length === 0) return;
 
-                                const file = fileInput.files[0];
-                                statusText.innerText = "Compressing image...";
+                                    const file = fileInput.files[0];
+                                    statusText.innerText = "Compressing image...";
 
-                                const reader = new FileReader();
-                                reader.readAsDataURL(file);
+                                    const reader = new FileReader();
+                                    reader.readAsDataURL(file);
 
-                                reader.onload = function (event) {
-                                    const img = new Image();
-                                    img.src = event.target.result;
+                                    reader.onload = function (event) {
+                                        const img = new Image();
+                                        img.src = event.target.result;
 
-                                    img.onload = function () {
-                                        const canvas = document.createElement('canvas');
-                                        const ctx = canvas.getContext('2d');
+                                        img.onload = function () {
+                                            const canvas = document.createElement('canvas');
+                                            const ctx = canvas.getContext('2d');
 
-                                        // Resize logic (Max 800px)
-                                        const MAX_WIDTH = 800;
-                                        const MAX_HEIGHT = 800;
-                                        let width = img.width;
-                                        let height = img.height;
+                                            // Resize logic (Max 800px)
+                                            const MAX_WIDTH = 800;
+                                            const MAX_HEIGHT = 800;
+                                            let width = img.width;
+                                            let height = img.height;
 
-                                        if (width > height) {
-                                            if (width > MAX_WIDTH) {
-                                                height *= MAX_WIDTH / width;
-                                                width = MAX_WIDTH;
+                                            if (width > height) {
+                                                if (width > MAX_WIDTH) {
+                                                    height *= MAX_WIDTH / width;
+                                                    width = MAX_WIDTH;
+                                                }
+                                            } else {
+                                                if (height > MAX_HEIGHT) {
+                                                    width *= MAX_HEIGHT / height;
+                                                    height = MAX_HEIGHT;
+                                                }
                                             }
-                                        } else {
-                                            if (height > MAX_HEIGHT) {
-                                                width *= MAX_HEIGHT / height;
-                                                height = MAX_HEIGHT;
-                                            }
+
+                                            canvas.width = width;
+                                            canvas.height = height;
+                                            ctx.drawImage(img, 0, 0, width, height);
+
+                                            // Compress to JPEG 0.7 quality
+                                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                                            compressedInput.value = dataUrl;
+
+                                            statusText.innerText = "Image Ready (" + Math.round(dataUrl.length / 1024) + "KB). Click Analyze.";
+                                            console.log("Image compressed");
                                         }
-
-                                        canvas.width = width;
-                                        canvas.height = height;
-                                        ctx.drawImage(img, 0, 0, width, height);
-
-                                        // Compress to JPEG 0.7 quality
-                                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                                        compressedInput.value = dataUrl;
-
-                                        statusText.innerText = "Image Ready (" + Math.round(dataUrl.length / 1024) + "KB). Click Analyze.";
-                                        console.log("Image compressed");
                                     }
+                                });
+                            }
+
+                            function handleAnalyze() {
+                                if (!compressedInput.value && (!fileInput.files || fileInput.files.length === 0)) {
+                                    alert("Please select an image first.");
+                                    return;
                                 }
-                            });
-                        }
-
-                        function handleAnalyze() {
-                            if (!compressedInput.value && (!fileInput.files || fileInput.files.length === 0)) {
-                                alert("Please select an image first.");
-                                return;
+                                if (compressedInput.value) {
+                                    fileInput.value = ''; // Clear the massive file
+                                }
+                                document.getElementById('btn_analyze_submit').click();
                             }
-                            if (compressedInput.value) {
-                                fileInput.value = ''; // Clear the massive file
-                            }
-                            document.getElementById('btn_analyze_submit').click();
-                        }
-                    </script>
-                    <hr>
+                        </script>
+                        <hr>
 
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label>Food Name / Description</label>
-                            <input type="text" name="food_name" class="form-control"
-                                placeholder="e.g. Apple, Chicken Rice, etc."
-                                value="<?= htmlspecialchars($desc ?? '') ?>" required>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label>Food Name / Description</label>
+                                <input type="text" name="food_name" class="form-control"
+                                    placeholder="e.g. Apple, Chicken Rice, etc."
+                                    value="<?= htmlspecialchars($desc ?? '') ?>" required>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Calories (kcal)</label>
-                            <input type="number" name="calories" class="form-control" value="<?= $autoCals ?: 0 ?>">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Calories (kcal)</label>
+                                <input type="number" name="calories" class="form-control" value="<?= $autoCals ?: 0 ?>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Protein (g)</label>
+                                <input type="number" name="protein" class="form-control" value="<?= $autoProt ?: 0 ?>">
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Protein (g)</label>
-                            <input type="number" name="protein" class="form-control" value="<?= $autoProt ?: 0 ?>">
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label>Carbs (g)</label>
-                            <input type="number" name="carbs" class="form-control" value="<?= $autoCarbs ?: 0 ?>">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label>Carbs (g)</label>
+                                <input type="number" name="carbs" class="form-control" value="<?= $autoCarbs ?: 0 ?>">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label>Fibre (g)</label>
+                                <input type="number" name="fibre" class="form-control" value="<?= $autoFibre ?: 0 ?>">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label>Sugar (g)</label>
+                                <input type="number" name="sugar" class="form-control" value="<?= $autoSugar ?: 0 ?>">
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label>Fibre (g)</label>
-                            <input type="number" name="fibre" class="form-control" value="<?= $autoFibre ?: 0 ?>">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label>Sugar (g)</label>
-                            <input type="number" name="sugar" class="form-control" value="<?= $autoSugar ?: 0 ?>">
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Sodium (mg)</label>
-                            <input type="number" name="sodium" class="form-control" value="<?= $autoSodium ?: 0 ?>">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Sodium (mg)</label>
+                                <input type="number" name="sodium" class="form-control" value="<?= $autoSodium ?: 0 ?>">
+                            </div>
                         </div>
-                    </div>
 
-                    <button type="submit" name="log_food" class="btn btn-success w-100"><i class="bi bi-check-lg"></i>
-                        Log Food Entry</button>
-                </form>
+                        <button type="submit" name="log_food" class="btn btn-success w-100"><i class="bi bi-check-lg"></i>
+                            Log Food Entry</button>
+                    </form>
+                </div>
+
+                <!-- Water Tab -->
+                <div class="tab-pane fade" id="water" role="tabpanel">
+                    <form method="post" class="card p-4 shadow-sm border-primary">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-droplet-fill"></i> Log Water</h4>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Amount (L)</label>
+                            <input type="number" step="0.1" name="water_log" class="form-control form-control-lg"
+                                placeholder="0.5" required>
+                            <small class="text-muted">Typical glass is 0.25L</small>
+                        </div>
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
+                                onclick="document.querySelector('[name=water_log]').value=0.25">+ 250ml</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
+                                onclick="document.querySelector('[name=water_log]').value=0.5">+ 500ml</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
+                                onclick="document.querySelector('[name=water_log]').value=1.0">+ 1L</button>
+                        </div>
+                        <button type="submit" name="log_water" class="btn btn-primary w-100">Add Water Log</button>
+                    </form>
+                </div>
             </div>
-
-            <!-- Water Tab -->
-            <div class="tab-pane fade" id="water" role="tabpanel">
-                <form method="post" class="card p-4 shadow-sm border-primary">
-                    <h4 class="mb-3 text-primary"><i class="bi bi-droplet-fill"></i> Log Water</h4>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Amount (L)</label>
-                        <input type="number" step="0.1" name="water_log" class="form-control form-control-lg"
-                            placeholder="0.5" required>
-                        <small class="text-muted">Typical glass is 0.25L</small>
-                    </div>
-                    <div class="d-flex gap-2 mb-3">
-                        <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
-                            onclick="document.querySelector('[name=water_log]').value=0.25">+ 250ml</button>
-                        <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
-                            onclick="document.querySelector('[name=water_log]').value=0.5">+ 500ml</button>
-                        <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1"
-                            onclick="document.querySelector('[name=water_log]').value=1.0">+ 1L</button>
-                    </div>
-                    <button type="submit" name="log_water" class="btn btn-primary w-100">Add Water Log</button>
-                </form>
-            </div>
-        </div>
+        <?php endif; ?>
     </div>
 
+    <!-- DEBUG: RIGHT COLUMN STARTS -->
     <div class="col-md-6">
         <h3><i class="bi bi-calendar-check text-primary"></i> Today's Plan</h3>
         <?php
@@ -460,16 +540,8 @@ include '../includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <script>
-                function fillQuickLog(cals, prot, carbs, fibre, sodium, sugar, name) {
-                    document.querySelector('input[name=\'food_name\']').value = name;
-                    document.querySelector('input[name=\'calories\']').value = cals;
-                    document.querySelector('input[name=\'protein\']').value = prot;
-                    document.querySelector('input[name=\'carbs\']').value = carbs;
-                    document.querySelector('input[name=\'fibre\']').value = fibre;
-                    document.querySelector('input[name=\'sodium\']').value = sodium;
-                    document.querySelector('input[name=\'sugar\']').value = sugar;
-
+            <script>             function fillQuickLog(cals, prot, carbs, fibre, sodium, sugar, name) {
+                    document.querySelector('input[name=\'food_name\']').value = name; document.querySelector('input[name=\'calories\']').value = cals; document.querySelector('input[name=\'protein\']').value = prot; document.querySelector('input[name=\'carbs\']').value = carbs; document.querySelector('input[name=\'fibre\']').value = fibre; document.querySelector('input[name=\'sodium\']').value = sodium; document.querySelector('input[name=\'sugar\']').value = sugar;
                     document.querySelector('#foodLogForm').scrollIntoView({ behavior: 'smooth' });
                 }
             </script>

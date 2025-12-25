@@ -61,10 +61,10 @@ session_start();
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="login.php">Login</a>
+                            <a class="btn btn-outline-light ms-2 px-3" href="login.php">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-outline-light ms-2 px-3" href="register.php">Get Started</a>
+                            <a class="btn btn-outline-light ms-2 px-3" href="register.php">Get Started</a>
                         </li>
                     <?php endif; ?>
                 </ul>

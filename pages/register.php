@@ -351,30 +351,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="role-options">
                     <label class="role-option">
                         <input type="radio" name="role" value="Elderly" required onclick="toggleFields()">
-                        <span>Elderly User</span>
+                        <span>User (Elderly)</span>
                     </label>
                     <label class="role-option">
                         <input type="radio" name="role" value="Caretaker" onclick="toggleFields()">
                         <span>Caretaker</span>
                     </label>
-                    <label class="role-option">
-                        <input type="radio" name="role" value="Dietitian" onclick="toggleFields()">
-                        <span>Dietitian</span>
-                    </label>
-                    <label class="role-option">
-                        <input type="radio" name="role" value="Admin" onclick="toggleFields()">
-                        <span>Admin</span>
-                    </label>
                 </div>
             </div>
 
-            <!-- Dietitian Fields -->
-            <div id="dietitianFields" class="extra-fields" style="display:none;">
-                <div class="input-container" style="margin-bottom:0;">
-                    <input type="text" name="licenseNo" placeholder=" ">
-                    <label>License Number</label>
-                </div>
-            </div>
+
 
             <!-- Caretaker Fields -->
             <div id="caretakerFields" class="extra-fields" style="display:none;">
@@ -397,7 +383,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         // Password Toggle
         function setupToggle(id, fieldId) {
-            document.getElementById(id).addEventListener('click', function  () {
+            document.getElementById(id).addEventListener('click', function () {
                 const field = document.getElementById(fieldId);
                 const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
                 field.setAttribute('type', type);
@@ -411,9 +397,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function toggleFields() {
             const roles = document.getElementsByName('role');
             let selected = '';
-            fo r (const r of roles) {  if (r.checked) selected = r.value; }
+            for (const r of roles) { if (r.checked) selected = r.value; }
 
-            document.getElementById('dietitianFields').style.display = selected === 'Dietitian' ? 'block' : 'none';
             document.getElementById('caretakerFields').style.display = selected === 'Caretaker' ? 'block' : 'none';
         }
     </script>

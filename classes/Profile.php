@@ -243,6 +243,26 @@ class Profile
             $this->medicationList[] = $m;
     }
 
+    public function getMedications()
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM medications WHERE elderlyID = ? ORDER BY name ASC");
+        $stmt->execute([$this->elderlyID]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function clearMedications()
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM medications WHERE elderlyID = ?");
+        $stmt->execute([$this->elderlyID]);
+    }
+
+    public function addMedicationDetailed($name, $dosage, $freq)
+    {
+        $id = uniqid('MED_');
+        $stmt = $this->pdo->prepare("INSERT INTO medications (medicationID, elderlyID, name, dosage, frequency) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$id, $this->elderlyID, $name, $dosage, $freq]);
+    }
+
     // Getters for UI
     public function getProfileID()
     {

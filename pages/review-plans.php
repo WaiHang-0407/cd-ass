@@ -5,7 +5,7 @@ require_once '../includes/db.php';
 require_once '../classes/DietPlan.php';
 require_once '../classes/Profile.php'; // Fix Fatal Error
 
-requireRole('Dietitian');
+requireRole(['Dietitian', 'Admin']);
 $user = getCurrentUser();
 
 // Handle Actions
@@ -44,16 +44,30 @@ if (isset($_POST['action'])) {
 }
 
 $filter = $_GET['filter'] ?? 'All';
+$reqID = $_GET['id'] ?? null;
+
 $sql = "
     SELECT dp.*, u.name as elderlyName, dpa.status
     FROM diet_plans dp 
     JOIN diet_plan_approvals dpa ON dp.dietPlanID = dpa.dietPlanID 
     JOIN users u ON dp.elderlyID = u.userID
     JOIN elderly e ON u.userID = e.elderlyID
-    WHERE e.assignedDietitianID = ?
+    WHERE 1=1
 ";
 
-$params = [$user->userID];
+$params = [];
+
+// Admin sees all (or specific ID), Dietitian sees assigned
+if ($user->role !== 'Admin') {
+    $sql .= " AND e.assignedDietitianID = ?";
+    $params[] = $user->userID;
+}
+
+if ($reqID) {
+    $sql .= " AND dp.dietPlanID = ?";
+    $params[] = $reqID;
+}
+
 if ($filter !== 'All') {
     $sql .= " AND dpa.status = ?";
     $params[] = $filter;

@@ -4,23 +4,41 @@ require_once '../includes/auth.php';
 require_once '../includes/db.php';
 require_once '../classes/GenerateDietPlan.php';
 
-requireRole(['User', 'Elderly']);
-$user = getCurrentUser();
+requireRole(['User', 'Elderly', 'Dietitian']);
+$currentUser = getCurrentUser();
+$targetUserID = $currentUser->userID;
+$isDietitian = ($currentUser->role === 'Dietitian');
+
+// Dietitian Mode: Check for ID parameter
+if ($isDietitian) {
+    if (!isset($_GET['id'])) {
+        header("Location: my-patients.php");
+        exit;
+    }
+    $targetUserID = $_GET['id'];
+    
+    // Validate Assignment
+    $check = $pdo->prepare("SELECT count(*) FROM elderly WHERE elderlyID = ? AND assignedDietitianID = ?");
+    $check->execute([$targetUserID, $currentUser->userID]);
+    if ($check->fetchColumn() == 0) {
+        die("Unauthorized access to this patient plan.");
+    }
+}
 
 $generator = new GenerateDietPlan($pdo);
 $msg = '';
 
 // Cancel Plan Action
-// Cancel Plan Action
 if (isset($_POST['cancel_plan'])) {
     $planID = $_POST['plan_id'];
     
-    // Security Check: Ensure plan belongs to user
+    // Security Check: Ensure plan belongs to target user
     $check = $pdo->prepare("SELECT elderlyID FROM diet_plans WHERE dietPlanID = ?");
     $check->execute([$planID]);
     $owner = $check->fetchColumn();
     
-    if ($owner === $user->userID) {
+    // Allow Owner OR Dietitian to delete
+    if ($owner === $targetUserID) {
         $stmt = $pdo->prepare("DELETE FROM diet_plans WHERE dietPlanID = ?");
         $stmt->execute([$planID]);
         $msg = "<div class='alert alert-warning'>Plan has been deleted. You can now generate a new one.</div>";
@@ -37,14 +55,15 @@ if (isset($_POST['generate'])) {
         JOIN diet_plan_approvals dpa ON dp.dietPlanID = dpa.dietPlanID
         WHERE dp.elderlyID = ? AND dpa.status IN ('Pending', 'Approved', 'Revise')
     ");
-    $stmt->execute([$user->userID]);
+    $stmt->execute([$targetUserID]);
     if ($stmt->fetchColumn() > 0) {
-        $msg = "<div class='alert alert-danger'>You already have an active plan. Please cancel it first.</div>";
+        $msg = "<div class='alert alert-danger'>Active plan exists. Cancel it first.</div>";
     } else {
         $cuisines = $_POST['cuisines'] ?? [];
         $duration = $_POST['duration'] ?? 1;
         $goal = $_POST['goal'] ?? 'maintain';
-        $result = $generator->generate($user->userID, $cuisines, $duration, $goal);
+        // Generate for TARGET
+        $result = $generator->generate($targetUserID, $cuisines, $duration, $goal);
         
         if (is_string($result) && strpos($result, 'Error:') === 0) {
             $msg = "<div class='alert alert-danger'><strong>Generation Failed</strong>: " . htmlspecialchars(substr($result, 7)) . "</div>";
@@ -54,9 +73,9 @@ if (isset($_POST['generate'])) {
     }
 }
 
-// Fetch ALL plans
+// Fetch ALL plans for TARGET
 $stmt = $pdo->prepare("SELECT * FROM diet_plans WHERE elderlyID = ? ORDER BY createdAt DESC");
-$stmt->execute([$user->userID]);
+$stmt->execute([$targetUserID]);
 $allPlansData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $plans = [];
@@ -67,7 +86,7 @@ foreach ($allPlansData as $data) {
     $p = new DietPlan($pdo, $data);
     $plans[] = $p;
     
-    // Check for Active Plan
+    // Check for Active Plan (Logic remains same)
     $status = $p->approval->getStatus();
     if (in_array($status, ['Pending', 'Approved', 'Revise']) && $activePlanID === null) {
         $activePlanID = $p->dietPlanID;
@@ -81,7 +100,14 @@ include '../includes/header.php';
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>My Diet Plans</h2>
+            <?php if ($isDietitian): ?>
+                <div>
+                     <a href="my-patients.php" class="btn btn-outline-secondary btn-sm mb-2">&larr; Back to Patient List</a>
+                     <h2>Diet Plan Management <small class="text-muted fs-6">for ID: <?= $targetUserID ?></small></h2>
+                </div>
+            <?php else: ?>
+                <h2>My Diet Plans</h2>
+            <?php endif; ?>
             
             <?php if ($activePlanID): ?>
                 <!-- Locked State -->
@@ -226,51 +252,59 @@ include '../includes/header.php';
                                         $dailyMeals[$day][] = $meal;
                                     }
                                     ksort($dailyMeals); // Ensure days are in order
+
+                                    // Calculate Active Day based on CreatedAt
+                                    $createdAt = new DateTime($plan->createdAt);
+                                    $now = new DateTime();
+                                    $diff = $now->diff($createdAt);
+                                    $calculatedDay = $diff->days + 1; // 1-based
+                                    
+                                    // Default to Day 1, but if calculated day exists in our meals, select it
+                                    $activeDay = 1;
+                                    if(array_key_exists($calculatedDay, $dailyMeals)) {
+                                        $activeDay = $calculatedDay;
+                                    }
                                     ?>
 
                                     <!-- Added Tabs for Days -->
                                     <ul class="nav nav-tabs mb-3" id="plan-<?= $plan->dietPlanID ?>-tabs" role="tablist">
                                         <?php 
-                                        $isFirstDay = true;
                                         foreach (array_keys($dailyMeals) as $dayNum):
                                             $tabId = "tab-p{$plan->dietPlanID}-d{$dayNum}";
                                             $paneId = "pane-p{$plan->dietPlanID}-d{$dayNum}";
+                                            $isActive = ($dayNum == $activeDay);
                                         ?>
                                             <li class="nav-item" role="presentation">
-                                                <button class="nav-link <?= $isFirstDay ? 'active' : '' ?>" 
+                                                <button class="nav-link <?= $isActive ? 'active' : '' ?>" 
                                                         id="<?= $tabId ?>" 
                                                         data-bs-toggle="tab" 
                                                         data-bs-target="#<?= $paneId ?>" 
                                                         type="button" 
                                                         role="tab" 
                                                         aria-controls="<?= $paneId ?>" 
-                                                        aria-selected="<?= $isFirstDay ? 'true' : 'false' ?>">
+                                                        aria-selected="<?= $isActive ? 'true' : 'false' ?>">
                                                     Day <?= $dayNum ?>
                                                 </button>
                                             </li>
                                         <?php 
-                                            $isFirstDay = false;
                                         endforeach; 
                                         ?>
                                     </ul>
 
                                     <div class="tab-content" id="plan-<?= $plan->dietPlanID ?>-content">
                                         <?php 
-                                        $isFirstDay = true;
                                         foreach ($dailyMeals as $day => $dMeals): 
                                             $paneId = "pane-p{$plan->dietPlanID}-d{$day}";
                                             $tabId = "tab-p{$plan->dietPlanID}-d{$day}";
+                                            $isActive = ($day == $activeDay);
 
                                             // Calculate Daily Totals
                                             $dayCal = 0; $dayProt = 0; $dayCarbs = 0; $daySod = 0;
                                             foreach($dMeals as $m) {
-                                                $dayCal += $m['totalCalories'];
-                                                $dayProt += $m['totalProtein'];
-                                                $dayCarbs += $m['totalCarbs'];
                                                 $daySod += $m['totalSodium'];
                                             }
                                         ?>
-                                            <div class="tab-pane fade <?= $isFirstDay ? 'show active' : '' ?>" 
+                                            <div class="tab-pane fade <?= $isActive ? 'show active' : '' ?>" 
                                                  id="<?= $paneId ?>" 
                                                  role="tabpanel" 
                                                  aria-labelledby="<?= $tabId ?>">
@@ -333,7 +367,6 @@ include '../includes/header.php';
                                                 </div>
                                             </div>
                                         <?php 
-                                            $isFirstDay = false;
                                         endforeach; 
                                         ?>
                                     </div>

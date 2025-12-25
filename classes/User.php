@@ -19,6 +19,7 @@ class User implements UserStrategy
     public $age;
     public $gender;
     public $role;
+    public $isActive; // New Property
 
     public function __construct($pdo, $data = null)
     {
@@ -33,6 +34,7 @@ class User implements UserStrategy
             $this->age = $data['age'] ?? 0;
             $this->gender = $data['gender'] ?? '';
             $this->role = $data['role'] ?? '';
+            $this->isActive = $data['isActive'] ?? 1; // Default Active
         }
     }
 
@@ -68,6 +70,10 @@ class User implements UserStrategy
     public function setRole($role)
     {
         $this->role = $role;
+    }
+    public function setIsActive($isActive)
+    {
+        $this->isActive = $isActive;
     }
 
     // Getters
@@ -107,21 +113,22 @@ class User implements UserStrategy
     {
         return $this->role;
     }
+    public function getIsActive()
+    {
+        return $this->isActive;
+    }
     public function getAdminID()
     {
         return null;
-    } // Default null, overridden by Admin
+    }
 
     // Interface Implementation
     public function getID()
     {
         return $this->userID;
     }
-
     public function login($password)
     {
-        // Basic check, typically called after loading user by username
-        // In this design, we assume the object is populated via a fetch first
         return password_verify($password, $this->password);
     }
 
@@ -157,11 +164,15 @@ class User implements UserStrategy
         // Insert or Update logic
         if (!$this->userID) {
             $this->userID = uniqid('U_'); // User ID generation strategy
-            $stmt = $this->pdo->prepare("INSERT INTO users (userID, name, username, password, email, phoneNo, age, gender, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$this->userID, $this->name, $this->username, $this->password, $this->email, $this->phoneNo, $this->age, $this->gender, $this->role]);
+            $stmt = $this->pdo->prepare("INSERT INTO users (userID, name, username, password, email, phoneNo, age, gender, role, isActive, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt->execute([$this->userID, $this->name, $this->username, $this->password, $this->email, $this->phoneNo, $this->age, $this->gender, $this->role, $this->isActive]);
+            return true;
+        } else {
+            // Update Logic
+            $stmt = $this->pdo->prepare("UPDATE users SET name=?, username=?, email=?, phoneNo=?, age=?, gender=?, role=?, isActive=?, password=? WHERE userID=?");
+            $stmt->execute([$this->name, $this->username, $this->email, $this->phoneNo, $this->age, $this->gender, $this->role, $this->isActive, $this->password, $this->userID]);
             return true;
         }
-        return false;
     }
 }
 ?>

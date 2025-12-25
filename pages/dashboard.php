@@ -348,7 +348,231 @@ try {
         }
         ?>
 
-        <!-- Weekly Progress Widget -->
+        <!-- Row 1: Quick Actions & Shopping List -->
+        <div class="row mb-4">
+            <!-- Quick Actions -->
+            <?php if (($user->role == 'User' || $user->role == 'Elderly') && $loggedInUser->role != 'Caretaker'): ?>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light"> Quick Actions </div>
+                        <div class="card-body d-grid gap-2">
+                            <a href="messages.php" class="btn btn-outline-primary text-start"><i
+                                    class="bi bi-chat-dots me-2"></i>
+                                Message Dietitian</a>
+                            <a href="diet-plan.php" class="btn btn-outline-primary text-start"><i
+                                    class="bi bi-file-text me-2"></i>
+                                View Full Plan</a>
+                            <a href="food-log.php" class="btn btn-outline-success text-start"><i
+                                    class="bi bi-plus-circle me-2"></i>
+                                Log Food / View History</a>
+                            <a href="profile.php" class="btn btn-outline-info text-start"><i class="bi bi-person-gear me-2"></i>
+                                Update Profile</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Shopping List Widget -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 border-success">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-basket"></i> Shopping List</span>
+                        <span class="badge bg-white text-success"><?= count($shoppingList) ?></span>
+                    </div>
+                    <ul class="list-group list-group-flush small" id="dashboardShopList">
+                        <?php if (empty($shoppingList)): ?>
+                            <li class="list-group-item text-muted text-center py-3">Your list is empty.</li>
+                        <?php else: ?>
+                            <?php foreach ($shoppingList as $item): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    id="shop-item-<?= $item['itemID'] ?>">
+                                    <?= htmlspecialchars($item['item']) ?>
+                                    <button class="btn btn-sm text-danger p-0" onclick="removeShopItem('<?= $item['itemID'] ?>')">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </ul>
+                    <?php if (!empty($shoppingList)): ?>
+                        <div class="card-footer bg-white border-top-0">
+                            <button class="btn btn-outline-success w-100" onclick="clearShoppingList()">
+                                <i class="bi bi-check-all"></i> Complete Shopping
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Medication Schedule -->
+        <?php
+        $meds = $profile->getMedications();
+        if (!empty($meds)):
+            ?>
+            <div class="col-md-12 mb-4">
+                <div class="card shadow-sm border-info">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="m-0"><i class="bi bi-capsule"></i> Medication Schedule</h5>
+                        <span class="badge bg-white text-info"><?= count($meds) ?> Meds</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <?php
+                            // Simple Time Mapping
+                            $timeSlots = ['Morning', 'Noon', 'Evening', 'Night'];
+
+                            foreach ($meds as $med):
+                                $freq = (int) $med['frequency'];
+                                $times = [];
+                                if ($freq == 1)
+                                    $times = ['Morning'];
+                                elseif ($freq == 2)
+                                    $times = ['Morning', 'Night'];
+                                elseif ($freq == 3)
+                                    $times = ['Morning', 'Afternoon', 'Night'];
+                                elseif ($freq >= 4)
+                                    $times = ['Morning', 'Noon', 'Evening', 'Night'];
+
+                                // Display
+                                ?>
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex align-items-center border rounded p-2 bg-light">
+                                        <i class="bi bi-prescription fs-3 text-danger me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($med['name']) ?></h6>
+                                            <div class="small text-muted">
+                                                Take <strong><?= htmlspecialchars($med['dosage']) ?></strong>:
+                                                <?php foreach ($times as $t): ?>
+                                                    <span class="badge bg-secondary"><?= $t ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Row 3: Daily Progress -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 text-primary"><i class="bi bi-activity"></i> Daily Progress (<?= date('M d') ?>)</h5>
+                    <span class="badge bg-warning text-dark"><i class="bi bi-fire"></i> <?= $progress->getStreak() ?> Day
+                        Streak</span>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-2 row-cols-md-4 g-3 mb-3">
+                        <?php
+                        $metrics = [
+                            ['label' => 'Calories', 'val' => $progress->caloriesTaken, 'limit' => ($profile->caloriesLimit ?: 2000), 'unit' => '', 'type' => 'range'],
+                            ['label' => 'Protein', 'val' => $progress->proteinTaken, 'limit' => 60, 'unit' => 'g', 'type' => 'min'],
+                            ['label' => 'Carbs', 'val' => $progress->carbohydrateTaken, 'limit' => ($profile->carbsLimit ?: 275), 'unit' => 'g', 'type' => 'max'],
+                            ['label' => 'Sodium', 'val' => $progress->sodiumTaken, 'limit' => ($profile->sodiumLimit ?: 2300), 'unit' => 'mg', 'type' => 'max'],
+                            ['label' => 'Sugar', 'val' => $progress->sugarTaken, 'limit' => ($profile->sugarLimit ?: 50), 'unit' => 'g', 'type' => 'max'],
+                            ['label' => 'Fiber', 'val' => $progress->fiberTaken, 'limit' => 30, 'unit' => 'g', 'type' => 'min'],
+                            ['label' => 'Water', 'val' => $progress->waterIntake, 'limit' => 2.0, 'unit' => 'L', 'type' => 'min'],
+                        ];
+
+                        foreach ($metrics as $m):
+                            $val = $m['val'];
+                            $limit = $m['limit'];
+                            $type = $m['type'];
+                            $ratio = ($limit > 0) ? ($val / $limit) : 0;
+                            $perc = min(100, $ratio * 100);
+
+                            // Determine Color
+                            $col = 'success'; // Default Good
+                    
+                            if ($type == 'max') {
+                                if ($ratio > 1.25)
+                                    $col = 'danger';
+                                elseif ($ratio > 1.0)
+                                    $col = 'warning';
+                                else
+                                    $col = 'success';
+                            } elseif ($type == 'min') {
+                                if ($ratio < 0.5)
+                                    $col = 'danger';
+                                elseif ($ratio < 0.8)
+                                    $col = 'warning';
+                                else
+                                    $col = 'info';
+                            } elseif ($type == 'range') { // Calories
+                                if ($ratio > 1.25)
+                                    $col = 'danger';
+                                elseif ($ratio > 1.1)
+                                    $col = 'warning';
+                                elseif ($ratio < 0.6)
+                                    $col = 'warning';
+                                else
+                                    $col = 'success';
+                            }
+                            ?>
+                            <div class="col text-center">
+                                <h6 class="text-muted small mb-1"><?= $m['label'] ?></h6>
+                                <h4 class="fw-bold mb-1"><?= $val ?><small
+                                        class="fs-6 fw-normal text-muted"><?= $m['unit'] ?></small></h4>
+                                <div class="progress bg-light" style="height: 6px;">
+                                    <div class="progress-bar bg-<?= $col ?>" style="width: <?= $perc ?>%"></div>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Target: <?= $limit . $m['unit'] ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="text-end mt-2">
+                        <?php if ($viewingUserID == $loggedInUser->userID): ?>
+                            <a href="food-log.php" class="btn btn-sm btn-outline-success">Log Intake</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Today's Menu -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="m-0"><i class="bi bi-calendar-check"></i> Today's Menu</h5>
+                    <span class="badge bg-light text-primary"><?= $planMsg ?></span>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($todayMeals)): ?>
+                        <div class="text-muted text-center py-4">
+                            <i class="bi bi-egg-fried fs-1 d-block mb-3"></i>
+                            <p>No meals scheduled for today. <a href="diet-plan.php">Generate a plan?</a></p>
+                        </div>
+                    <?php else: ?>
+                        <div class="row">
+                            <?php foreach ($todayMeals as $meal):
+                                // Fetch Foods
+                                $fstmt = $pdo->prepare("SELECT foodName FROM foods WHERE mealID = ?");
+                                $fstmt->execute([$meal['mealID']]);
+                                $foods = $fstmt->fetchAll(PDO::FETCH_COLUMN);
+                                ?>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <strong><?= htmlspecialchars($meal['mealType']) ?></strong>
+                                                <span class="badge bg-secondary"><?= $meal['totalCalories'] ?> kcal</span>
+                                            </div>
+                                            <p class="mb-0 text-muted small"><?= implode(', ', $foods) ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 5: Weekly Analysis -->
         <div class="col-md-12 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -434,167 +658,6 @@ try {
             </script>
         </div>
 
-        <!-- Daily Progress Section -->
-        <div class="col-md-12 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="m-0 text-primary"><i class="bi bi-activity"></i> Daily Progress (<?= date('M d') ?>)</h5>
-                    <span class="badge bg-warning text-dark"><i class="bi bi-fire"></i> <?= $progress->getStreak() ?> Day
-                        Streak</span>
-                </div>
-                <div class="card-body">
-                    <div class="row row-cols-2 row-cols-md-4 g-3 mb-3">
-                        <?php
-                        $metrics = [
-                            ['label' => 'Calories', 'val' => $progress->caloriesTaken, 'limit' => ($profile->caloriesLimit ?: 2000), 'unit' => '', 'type' => 'range'],
-                            ['label' => 'Protein', 'val' => $progress->proteinTaken, 'limit' => 60, 'unit' => 'g', 'type' => 'min'],
-                            ['label' => 'Carbs', 'val' => $progress->carbohydrateTaken, 'limit' => ($profile->carbsLimit ?: 275), 'unit' => 'g', 'type' => 'max'],
-                            ['label' => 'Sodium', 'val' => $progress->sodiumTaken, 'limit' => ($profile->sodiumLimit ?: 2300), 'unit' => 'mg', 'type' => 'max'],
-                            ['label' => 'Sugar', 'val' => $progress->sugarTaken, 'limit' => ($profile->sugarLimit ?: 50), 'unit' => 'g', 'type' => 'max'],
-                            ['label' => 'Fiber', 'val' => $progress->fiberTaken, 'limit' => 30, 'unit' => 'g', 'type' => 'min'],
-                            ['label' => 'Water', 'val' => $progress->waterIntake, 'limit' => 2.0, 'unit' => 'L', 'type' => 'min'],
-                        ];
-
-                        foreach ($metrics as $m):
-                            $val = $m['val'];
-                            $limit = $m['limit'];
-                            $type = $m['type'];
-                            $ratio = ($limit > 0) ? ($val / $limit) : 0;
-                            $perc = min(100, $ratio * 100);
-
-                            // Determine Color
-                            $col = 'success'; // Default Good
-                    
-                            if ($type == 'max') {
-                                if ($ratio > 1.25)
-                                    $col = 'danger';
-                                elseif ($ratio > 1.0)
-                                    $col = 'warning';
-                                else
-                                    $col = 'success';
-                            } elseif ($type == 'min') {
-                                if ($ratio < 0.5)
-                                    $col = 'danger';
-                                elseif ($ratio < 0.8)
-                                    $col = 'warning';
-                                else
-                                    $col = 'info';
-                            } elseif ($type == 'range') { // Calories
-                                if ($ratio > 1.25)
-                                    $col = 'danger';
-                                elseif ($ratio > 1.1)
-                                    $col = 'warning';
-                                elseif ($ratio < 0.5)
-                                    $col = 'warning';
-                                else
-                                    $col = 'success';
-                            }
-                            ?>
-                            <div class="col text-center">
-                                <h6 class="text-muted small mb-1"><?= $m['label'] ?></h6>
-                                <h4 class="fw-bold mb-1"><?= $val ?><small
-                                        class="fs-6 fw-normal text-muted"><?= $m['unit'] ?></small></h4>
-                                <div class="progress bg-light" style="height: 6px;">
-                                    <div class="progress-bar bg-<?= $col ?>" style="width: <?= $perc ?>%"></div>
-                                </div>
-                                <div class="text-muted" style="font-size: 0.7rem;">Target: <?= $limit . $m['unit'] ?></div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="text-end mt-2">
-                        <a href="food-log.php" class="btn btn-sm btn-outline-success">Log Intake</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Today's Menu Section -->
-        <div class="col-md-8 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="m-0"><i class="bi bi-calendar-check"></i> Today's Menu</h5>
-                    <span class="badge bg-light text-primary"><?= $planMsg ?></span>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($todayMeals)): ?>
-                        <div class="text-muted text-center py-4">
-                            <i class="bi bi-egg-fried fs-1 d-block mb-3"></i>
-                            <p>No meals scheduled for today. <a href="diet-plan.php">Generate a plan?</a></p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="list-group list-group-flush">
-                            <?php foreach ($todayMeals as $meal):
-                                // Fetch Foods
-                                $fstmt = $pdo->prepare("SELECT foodName FROM foods WHERE mealID = ?");
-                                $fstmt->execute([$meal['mealID']]);
-                                $foods = $fstmt->fetchAll(PDO::FETCH_COLUMN);
-                                ?>
-                                <li class="list-group-item">
-                                    <div class="d-flex justify-content-between">
-                                        <strong><?= htmlspecialchars($meal['mealType']) ?></strong>
-                                        <span class="badge bg-secondary"><?= $meal['totalCalories'] ?> kcal</span>
-                                    </div>
-                                    <p class="mb-0 text-muted small"><?= implode(', ', $foods) ?></p>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Links -->
-        <!-- Quick Links -->
-        <?php if (($user->role == 'User' || $user->role == 'Elderly') && $loggedInUser->role != 'Caretaker'): ?>
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-light"> Quick Actions </div>
-                    <div class="card-body d-grid gap-2">
-                        <a href="messages.php" class="btn btn-outline-primary text-start"><i class="bi bi-chat-dots me-2"></i>
-                            Message Dietitian</a>
-                        <a href="diet-plan.php" class="btn btn-outline-primary text-start"><i class="bi bi-file-text me-2"></i>
-                            View Full Plan</a>
-                        <a href="food-log.php" class="btn btn-outline-success text-start"><i class="bi bi-plus-circle me-2"></i>
-                            Log Food / View History</a>
-                        <a href="profile.php" class="btn btn-outline-info text-start"><i class="bi bi-person-gear me-2"></i>
-                            Update Profile</a>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <!-- Shopping List Widget -->
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100 border-success">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-basket"></i> Shopping List</span>
-                    <span class="badge bg-white text-success"><?= count($shoppingList) ?></span>
-                </div>
-                <ul class="list-group list-group-flush small" id="dashboardShopList">
-                    <?php if (empty($shoppingList)): ?>
-                        <li class="list-group-item text-muted text-center py-3">Your list is empty.</li>
-                    <?php else: ?>
-                        <?php foreach ($shoppingList as $item): ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center"
-                                id="shop-item-<?= $item['itemID'] ?>">
-                                <?= htmlspecialchars($item['item']) ?>
-                                <button class="btn btn-sm text-danger p-0" onclick="removeShopItem('<?= $item['itemID'] ?>')">
-                                    <i class="bi bi-x-circle-fill"></i>
-                                </button>
-                            </li>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </ul>
-                <?php if (!empty($shoppingList)): ?>
-                    <div class="card-footer bg-white border-top-0">
-                        <button class="btn btn-outline-success w-100" onclick="clearShoppingList()">
-                            <i class="bi bi-check-all"></i> Complete Shopping
-                        </button>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-
     <?php elseif ($user->role == 'Dietitian'): ?>
         <?php
         // Fetch stats
@@ -662,13 +725,125 @@ try {
             </div>
         </div>
 
+    <?php elseif ($user->role == 'Caretaker'): ?>
+        <?php
+        // Fetch Linked Patients with Status
+        // Re-use logic from top but get details
+        $caretakerMe = new Caretaker($pdo, (array) $loggedInUser); // Safe cast of currently logged in user
+        $myPatients = $caretakerMe->getLinkedPatients();
+        ?>
+
+        <!-- Caretaker Welcome Hero -->
+        <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center border">
+            <div class="container-fluid py-3">
+                <h1 class="display-5 fw-bold text-primary">Welcome, <?= htmlspecialchars($user->name) ?></h1>
+                <p class="col-md-8 fs-5 mx-auto text-muted">
+                    Managing the health of your loved ones made simple.
+                    Select a profile below to view their daily progress and diet plans.
+                </p>
+                <?php if (empty($myPatients)): ?>
+                    <a href="link-account.php" class="btn btn-primary btn-lg px-4 mt-3 rounded-pill shadow-sm">
+                        <i class="bi bi-link-45deg me-2"></i> Link Your First Patient
+                    </a>
+                <?php else: ?>
+                    <button class="btn btn-outline-primary btn-lg px-4 mt-3 rounded-pill disabled"
+                        style="opacity: 1; cursor: default;">
+                        You are monitoring <?= count($myPatients) ?> Users(s)
+                    </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if (!empty($myPatients)): ?>
+            <h4 class="mb-4 text-secondary border-bottom pb-2">Your Patients</h4>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <?php foreach ($myPatients as $p):
+                    // Fetch latest status
+                    $stmtS = $pdo->prepare("SELECT state FROM progress WHERE elderlyID = ? ORDER BY date DESC LIMIT 1");
+                    $stmtS->execute([$p->userID]);
+                    $state = $stmtS->fetchColumn();
+
+                    $statusColor = 'success';
+                    $statusText = 'On Track';
+                    $statusIcon = 'bi-check-circle-fill';
+
+                    if ($state === 'Yellow') {
+                        $statusColor = 'warning';
+                        $statusText = 'Needs Attention';
+                        $statusIcon = 'bi-exclamation-circle-fill';
+                    } elseif ($state === 'Red') {
+                        $statusColor = 'danger';
+                        $statusText = 'Critical';
+                        $statusIcon = 'bi-exclamation-triangle-fill';
+                    } elseif (!$state) {
+                        $statusColor = 'secondary';
+                        $statusText = 'No Recent Data';
+                        $statusIcon = 'bi-question-circle-fill';
+                    }
+                    ?>
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 transition-hover">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <span
+                                        class="avatar-circle-lg bg-light text-primary fs-3 rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        style="width: 80px; height: 80px;">
+                                        <?= strtoupper(substr($p->name, 0, 1)) ?>
+                                    </span>
+                                </div>
+                                <h5 class="card-title fw-bold text-dark"><?= htmlspecialchars($p->name) ?></h5>
+                                <p class="card-text text-muted small mb-3"><?= htmlspecialchars($p->email) ?></p>
+
+                                <div class="mb-4">
+                                    <span
+                                        class="badge bg-<?= $statusColor ?> bg-opacity-10 text-<?= $statusColor ?> px-3 py-2 rounded-pill border border-<?= $statusColor ?>">
+                                        <i class="bi <?= $statusIcon ?> me-1"></i> <?= $statusText ?>
+                                    </span>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <a href="?view_user=<?= $p->userID ?>" class="btn btn-primary">
+                                        View Dashboard
+                                    </a>
+                                    <a href="food-log.php?view_user=<?= $p->userID ?>" class="btn btn-outline-success">
+                                        View Food Log
+                                    </a>
+                                    <a href="messages.php?patient_id=<?= $p->userID ?>" class="btn btn-outline-secondary">
+                                        Message Dietitian
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <!-- Add New Patient Card -->
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-2 border-dashed border-secondary bg-light"
+                        style="min-height: 250px;">
+                        <a href="link-account.php"
+                            class="card-body d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
+                            <i class="bi bi-plus-circle fs-1 mb-3"></i>
+                            <h5 class="fw-bold">Link Another</h5>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="text-center py-5">
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/elderly-care-3428238-2876617.png" alt="Care"
+                    style="max-height: 200px; opacity: 0.8;">
+                <p class="text-muted mt-3">Start by linking the account of the person you are caring for.</p>
+            </div>
+        <?php endif; ?>
+
     <?php elseif ($user->role == 'Admin'): ?>
         <!-- Admin Dashboard -->
         <div class="col-md-4">
             <div class="card h-100 border-dark">
                 <div class="card-body text-center">
                     <h5 class="card-title">Manage Users</h5>
-                    <a href="#" class="btn btn-dark">Manage</a>
+                    <a href="admin/dashboard.php" class="btn btn-dark">Go to Admin Portal</a>
                 </div>
             </div>
         </div>

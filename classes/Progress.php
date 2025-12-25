@@ -56,12 +56,8 @@ class Progress
 
             $dietPlanID = $plan ? $plan['dietPlanID'] : null;
 
-            if (!$dietPlanID) {
-                // Create a placeholder plan to satisfy FK
-                $dietPlanID = uniqid('DP_');
-                $stmtNew = $this->pdo->prepare("INSERT INTO diet_plans (dietPlanID, elderlyID) VALUES (?, ?)");
-                $stmtNew->execute([$dietPlanID, $this->elderlyID]);
-            }
+            // DO NOT create placeholder plan. Allow NULL if DB permits, or manage logic elsewhere.
+            // Requirement: "do not auto create an empty diet plan"
 
             $this->progressID = uniqid('PG_');
             $this->state = new GreenState();
@@ -220,7 +216,13 @@ class Progress
             return;
         }
 
-        // 3. Healthy (Green)
+        // 3. Under-eating Checks (Yellow)
+        if ($calRatio < 0.6) { // Less than 60% of target
+            $this->state = new YellowState();
+            return;
+        }
+
+        // 4. Healthy (Green)
         $this->state = new GreenState();
     }
 
@@ -299,6 +301,8 @@ class Progress
 
         if ($calRatio > 1.1)
             $reasons[] = "Calories are high (" . round($calRatio * 100) . "%).";
+        if ($calRatio < 0.6)
+            $reasons[] = "Calories below minimum requirement (60%).";
         if ($this->sodiumTaken > $sodLimit)
             $reasons[] = "Sodium limit exceeded.";
         if ($this->sugarTaken > $sugarLimit)

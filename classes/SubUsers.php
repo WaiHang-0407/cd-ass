@@ -13,23 +13,50 @@ class Elderly extends User
         parent::__construct($pdo, $data);
         $this->elderlyID = $this->userID; // 1:1 mapping
         $this->assignedDietitianID = $data['assignedDietitianID'] ?? null;
+
+        // If ID exists but assignedDietitianID is missing (e.g. created from Users query), fetch it
+        if ($this->userID && $this->assignedDietitianID === null) {
+            $stmt = $this->pdo->prepare("SELECT assignedDietitianID FROM elderly WHERE elderlyID = ?");
+            $stmt->execute([$this->userID]);
+            $res = $stmt->fetchColumn();
+            if ($res) {
+                $this->assignedDietitianID = $res;
+            }
+        }
     }
 
     public function getProfile()
     {
         // Fetch profile from DB
-        return null; // Implementation in next steps
+        require_once 'Profile.php';
+        return new Profile($this->pdo, $this->userID);
     }
 
     public function getDietPlan()
     {
-        return null; // Implementation in next steps
+        // Fetch active diet plan
+        require_once 'DietPlan.php';
+        $stmt = $this->pdo->prepare("
+            SELECT dp.* 
+            FROM diet_plans dp 
+            JOIN diet_plan_approvals dpa ON dp.dietPlanID = dpa.dietPlanID
+            WHERE dp.elderlyID = ? AND dpa.status = 'Approved'
+            ORDER BY dp.createdAt DESC LIMIT 1
+        ");
+        $stmt->execute([$this->userID]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($data) {
+            return new DietPlan($this->pdo, $data);
+        }
+        return null;
     }
 
     public function save()
     {
         if (parent::save()) {
-            $stmt = $this->pdo->prepare("INSERT INTO elderly (elderlyID, assignedDietitianID) VALUES (?, ?)");
+            // Use INSERT ON DUPLICATE KEY UPDATE to Isolate from FK Cascades
+            $stmt = $this->pdo->prepare("INSERT INTO elderly (elderlyID, assignedDietitianID) VALUES (?, ?) ON DUPLICATE KEY UPDATE assignedDietitianID = VALUES(assignedDietitianID)");
             $stmt->execute([$this->userID, $this->assignedDietitianID]);
             return true;
         }
@@ -60,7 +87,7 @@ class Dietitian extends User
     public function save()
     {
         if (parent::save()) {
-            $stmt = $this->pdo->prepare("INSERT INTO dietitians (dietitianID, licenseNo, qualification) VALUES (?, ?, ?)");
+            $stmt = $this->pdo->prepare("INSERT INTO dietitians (dietitianID, licenseNo, qualification) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE licenseNo = VALUES(licenseNo), qualification = VALUES(qualification)");
             $stmt->execute([$this->userID, $this->licenseNo, json_encode($this->qualification)]);
             return true;
         }
@@ -78,7 +105,7 @@ class Admin extends User
     public function save()
     {
         if (parent::save()) {
-            $stmt = $this->pdo->prepare("INSERT INTO admins (adminID) VALUES (?)");
+            $stmt = $this->pdo->prepare("REPLACE INTO admins (adminID) VALUES (?)");
             $stmt->execute([$this->userID]);
             return true;
         }
@@ -116,7 +143,7 @@ class Caretaker extends Elderly
             $check = $this->pdo->prepare("SELECT caretakerID FROM caretakers WHERE caretakerID = ?");
             $check->execute([$this->userID]);
             if ($check->rowCount() == 0) {
-                $stmt = $this->pdo->prepare("INSERT INTO caretakers (caretakerID, relationship, emergencyContact) VALUES (?, ?, ?)");
+                $stmt = $this->pdo->prepare("INSERT INTO caretakers (caretakerID, relationship, emergencyContact) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE relationship = VALUES(relationship), emergencyContact = VALUES(emergencyContact)");
                 $stmt->execute([$this->userID, $this->relationship ?? '', $this->emergencyContact ?? '']);
             }
             return true;
