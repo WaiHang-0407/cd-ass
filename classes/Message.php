@@ -25,7 +25,6 @@ class Message
 
     public function getConversation($user1, $user2)
     {
-        // Fetch all messages between two users
         $stmt = $this->pdo->prepare("
             SELECT * FROM messages 
             WHERE (senderID = ? AND receiverID = ?) 
@@ -38,9 +37,6 @@ class Message
 
     public function getConversationsForUser($userID)
     {
-        // For Dietitians: Get list of users they have chatted with OR assigned patients
-        // Easier: Just get assigned patients and show last message if any.
-        // Actually, let's just stick to "assigned patients" list for now in the UI logic.
         return [];
     }
 

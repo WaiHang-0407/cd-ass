@@ -73,18 +73,14 @@ class ReviseDietPlanState implements DietPlanState
 class DietPlanApproval
 {
     private $pdo;
-    private $approvalID;
     private $dietPlanID;
     private $state; // Current State Object
-    private $approvalDate;
-    private $dietitianID;
 
     public function __construct($pdo, $dietPlanID, $statusStr = 'Pending')
     {
         $this->pdo = $pdo;
         $this->dietPlanID = $dietPlanID;
 
-        // Initialize State based on string from DB
         switch ($statusStr) {
             case 'Approved':
                 $this->state = new ApproveDietPlanState();
@@ -110,21 +106,30 @@ class DietPlanApproval
 
     public function updateDBStatus($statusStr, $dietitianID)
     {
-        $stmt = $this->pdo->prepare("UPDATE diet_plan_approvals SET status = ?, dietitianID = ?, approvalDate = NOW() WHERE dietPlanID = ?");
-        $stmt->execute([$statusStr, $dietitianID, $this->dietPlanID]);
+        $dietitianExists = false;
+        if (!empty($dietitianID)) {
+            try {
+                $chk = $this->pdo->prepare("SELECT 1 FROM dietitians WHERE dietitianID = ? LIMIT 1");
+                $chk->execute([$dietitianID]);
+                $dietitianExists = (bool) $chk->fetchColumn();
+            } catch (Exception $e) {
+                $dietitianExists = false;
+            }
+        }
+
+        if ($dietitianExists) {
+            $stmt = $this->pdo->prepare("UPDATE diet_plan_approvals SET status = ?, dietitianID = ?, approvalDate = NOW() WHERE dietPlanID = ?");
+            $stmt->execute([$statusStr, $dietitianID, $this->dietPlanID]);
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE diet_plan_approvals SET status = ?, dietitianID = NULL, approvalDate = NOW() WHERE dietPlanID = ?");
+            $stmt->execute([$statusStr, $this->dietPlanID]);
+        }
     }
 
-    // Actions delegated to state or handled here triggering state transitions
     public function approve($dietitianID)
     {
         if ($this->state instanceof PendingDietPlanApprovalState || $this->state instanceof ReviseDietPlanState) {
-            $this->state->approve($this, $dietitianID); // Need to add 'approve' method to interface or cast? 
-            // Simplified: Direct transition logic often simpler in Context for simple states, 
-            // but strict State pattern puts it in the State classes. 
-            // For PHP dynamic typing, we can call methods if they exist or define in interface.
-            // Let's refactor interface to be more capable or handle transition in Context for simplicity of this demo.
-
-            // Re-implementation for robustness:
+            $this->state->approve($this, $dietitianID);
             $this->setState(new ApproveDietPlanState());
             $this->updateDBStatus('Approved', $dietitianID);
         }
