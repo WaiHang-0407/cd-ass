@@ -19,15 +19,22 @@ if (isset($_POST['action'])) {
              $upd->execute([$mData['calories'], $mData['protein'], $mData['carbs'], $mData['sodium'], $mID]);
 
              // 2. Update Foods (Simplification: Delete all, add one text entry)
-             // We need to check if 'foods' table requires macros. Usually it does. We'll set them to data matching the meal or 0.
+             // Preserve any existing recipe association when the review form doesn't include it.
+             $rstmt = $pdo->prepare("SELECT recipeID FROM foods WHERE mealID = ? LIMIT 1");
+             $rstmt->execute([$mID]);
+             $existingRecipeID = $rstmt->fetchColumn();
+
              $pdo->prepare("DELETE FROM foods WHERE mealID=?")->execute([$mID]);
-             $ins = $pdo->prepare("INSERT INTO foods (foodID, mealID, foodName, calories, protein, carbs, fat, fibre, sugar, sodium) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, ?)");
-             // We map meal macros to this single food entry roughly, or just 0s. 
-             // Ideally we distribute, but here we just put the same values or 0. 
-             // Let's put 0 to avoid double counting if logic sums them up? 
-             // But UI reads from 'meals' table for totals. 'foods' is mostly for display.
-             // Let's safe-insert 0s for macros in foods table to avoid issues.
-             $ins->execute([uniqid('F_'), $mID, $mData['food_text'], 0, 0, 0, 0]); 
+
+            // Use recipeID from submitted data if present, otherwise fall back to existing one
+            $recipeToUse = $mData['recipeID'] ?? $existingRecipeID;
+            if (!empty($recipeToUse)) {
+                $ins = $pdo->prepare("INSERT INTO foods (foodID, mealID, recipeID, foodName) VALUES (?, ?, ?, ?)");
+                $ins->execute([uniqid('F_'), $mID, $recipeToUse, $mData['food_text']]);
+            } else {
+                $ins = $pdo->prepare("INSERT INTO foods (foodID, mealID, foodName) VALUES (?, ?, ?)");
+                $ins->execute([uniqid('F_'), $mID, $mData['food_text']]);
+            }
         }
         $successMsg = "Plan details updated successfully.";
     } else {

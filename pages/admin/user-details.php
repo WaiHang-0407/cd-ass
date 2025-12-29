@@ -263,7 +263,7 @@ $allDietitians = $dListStmt->fetchAll();
                                 if ($plan) {
                                     echo '<h6><strong>Plan Status:</strong> <span class="text-success">Active</span></h6>';
                                     echo '<p>Created on: ' . date('M d, Y', strtotime($plan['createdAt'])) . '</p>';
-                                    echo '<a href="#" class="btn btn-sm btn-outline-success">View Full Plan</a>';
+                                    echo '<a href="/pages/review-plans.php?id=' . $plan['dietPlanID'] . '"  class="btn btn-sm btn-outline-success">View Full Plan</a>';
                                 } else {
                                     echo '<p class="text-muted">No active approved diet plan found.</p>';
                                 }
